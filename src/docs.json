@@ -1215,6 +1215,7 @@
                 "langsmith/prompt-engineering",
                 "langsmith/prompt-engineering-quickstart",
                 "langsmith/prompt-engineering-concepts",
+                "langsmith/prompt-format",
                 {
                   "group": "Create and update prompts",
                   "pages": [
