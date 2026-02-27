@@ -46,7 +46,7 @@ The core insight is that you can call a LangChain agent directly inside any Lang
 from langchain.agents import create_agent
 from langgraph.graph import StateGraph, START, END
 
-agent = create_agent(model="openai:gpt-4o", tools=[...])
+agent = create_agent(model="openai:gpt-4.1", tools=[...])
 
 def agent_node(state: State) -> dict:
     """A LangGraph node that invokes a LangChain agent."""
@@ -132,11 +132,11 @@ def get_latest_news(query: str) -> str:
     return "Latest: The WNBA announced expanded playoff format for 2025..."
 
 agent = create_agent(
-    model="openai:gpt-4o",
+    model="openai:gpt-4.1",
     tools=[get_latest_news],
 )
 
-model = ChatOpenAI(model="gpt-4o")
+model = ChatOpenAI(model="gpt-4.1")
 
 class RewrittenQuery(BaseModel):
     query: str
@@ -186,9 +186,9 @@ print(result["answer"])
 
 ---
 
-<Callout icon="pen-to-square" iconType="regular">
+<Callout icon="edit">
     [Edit this page on GitHub](https://github.com/langchain-ai/docs/edit/main/src/oss/langchain/multi-agent/custom-workflow.mdx) or [file an issue](https://github.com/langchain-ai/docs/issues/new/choose).
 </Callout>
-<Tip icon="terminal" iconType="regular">
+<Callout icon="terminal-2">
     [Connect these docs](/use-these-docs) to Claude, VSCode, and more via MCP for real-time answers.
-</Tip>
+</Callout>

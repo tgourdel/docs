@@ -644,7 +644,7 @@ console.log(await graph.invoke({}, { context: { myRuntimeValue: "b" } }));  // [
 
   const MODELS = {
     anthropic: new ChatAnthropic({ model: "claude-haiku-4-5-20251001" }),
-    openai: new ChatOpenAI({ model: "gpt-4o-mini" }),
+    openai: new ChatOpenAI({ model: "gpt-4.1-mini" }),
   };
 
   const callModel: GraphNode<typeof State> = async (state, config) => {
@@ -676,7 +676,7 @@ console.log(await graph.invoke({}, { context: { myRuntimeValue: "b" } }));  // [
 
   ```
   claude-haiku-4-5-20251001
-  gpt-4o-mini-2024-07-18
+  gpt-4.1-mini-2025-04-14
   ```
 
 </Accordion>
@@ -704,7 +704,7 @@ console.log(await graph.invoke({}, { context: { myRuntimeValue: "b" } }));  // [
 
   const MODELS = {
     anthropic: new ChatAnthropic({ model: "claude-haiku-4-5-20251001" }),
-    openai: new ChatOpenAI({ model: "gpt-4o-mini" }),
+    openai: new ChatOpenAI({ model: "gpt-4.1-mini" }),
   };
 
   const callModel: GraphNode<typeof State> = async (state, config) => {
@@ -1694,10 +1694,10 @@ const lookupUserInfo = tool(
 
 
 <Warning>
-You MUST include `messages` (or any state key used for the message history) in `Command.update` when returning [`Command`](https://reference.langchain.com/javascript/classes/_langchain_langgraph.index.Command.html) from a tool and the list of messages in `messages` MUST contain a `ToolMessage`. This is necessary for the resulting message history to be valid (LLM providers require AI messages with tool calls to be followed by the tool result messages).
+You MUST include `messages` (or any state key used for the message history) in `Command.update` when returning [`Command`](https://reference.langchain.com/javascript/langchain-langgraph/index/Command) from a tool and the list of messages in `messages` MUST contain a `ToolMessage`. This is necessary for the resulting message history to be valid (LLM providers require AI messages with tool calls to be followed by the tool result messages).
 </Warning>
 
-If you are using tools that update state via [`Command`](https://reference.langchain.com/javascript/classes/_langchain_langgraph.index.Command.html), we recommend using prebuilt [`ToolNode`](https://reference.langchain.com/javascript/classes/_langchain_langgraph.prebuilt.ToolNode.html) which automatically handles tools returning [`Command`](https://reference.langchain.com/javascript/classes/_langchain_langgraph.index.Command.html) objects and propagates them to the graph state. If you're writing a custom node that calls tools, you would need to manually propagate [`Command`](https://reference.langchain.com/javascript/classes/_langchain_langgraph.index.Command.html) objects returned by the tools as the update from the node.
+If you are using tools that update state via [`Command`](https://reference.langchain.com/javascript/langchain-langgraph/index/Command), we recommend using prebuilt [`ToolNode`](https://reference.langchain.com/javascript/langchain-langgraph/prebuilt/ToolNode) which automatically handles tools returning [`Command`](https://reference.langchain.com/javascript/langchain-langgraph/index/Command) objects and propagates them to the graph state. If you're writing a custom node that calls tools, you would need to manually propagate [`Command`](https://reference.langchain.com/javascript/langchain-langgraph/index/Command) objects returned by the tools as the update from the node.
 
 ## Visualize your graph
 
@@ -1792,9 +1792,9 @@ await fs.writeFile("graph.png", imageBuffer);
 
 ---
 
-<Callout icon="pen-to-square" iconType="regular">
+<Callout icon="edit">
     [Edit this page on GitHub](https://github.com/langchain-ai/docs/edit/main/src/oss/langgraph/use-graph-api.mdx) or [file an issue](https://github.com/langchain-ai/docs/issues/new/choose).
 </Callout>
-<Tip icon="terminal" iconType="regular">
+<Callout icon="terminal-2">
     [Connect these docs](/use-these-docs) to Claude, VSCode, and more via MCP for real-time answers.
-</Tip>
+</Callout>

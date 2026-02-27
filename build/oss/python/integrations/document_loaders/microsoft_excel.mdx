@@ -1,5 +1,6 @@
 ---
-title: Microsoft Excel
+title: "Microsoft Excel integration"
+description: "Integrate with the Microsoft Excel document loader using LangChain Python."
 ---
 
 The `UnstructuredExcelLoader` is used to load `Microsoft Excel` files. The loader works with both `.xlsx` and `.xls` files. The page content will be the raw text of the Excel file. If you use the loader in `"elements"` mode, an HTML representation of the Excel file will be available in the document metadata under the `text_as_html` key.
@@ -65,9 +66,9 @@ documents = loader.load()
 
 ---
 
-<Callout icon="pen-to-square" iconType="regular">
+<Callout icon="edit">
     [Edit this page on GitHub](https://github.com/langchain-ai/docs/edit/main/src/oss/python/integrations/document_loaders/microsoft_excel.mdx) or [file an issue](https://github.com/langchain-ai/docs/issues/new/choose).
 </Callout>
-<Tip icon="terminal" iconType="regular">
+<Callout icon="terminal-2">
     [Connect these docs](/use-these-docs) to Claude, VSCode, and more via MCP for real-time answers.
-</Tip>
+</Callout>

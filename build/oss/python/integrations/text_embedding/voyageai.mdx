@@ -1,5 +1,6 @@
 ---
-title: Voyage AI
+title: "Voyage AI integration"
+description: "Integrate with the Voyage AI embedding model using LangChain Python."
 ---
 
 >[Voyage AI](https://www.voyageai.com/) provides cutting-edge embedding/vectorizations models.
@@ -12,6 +13,9 @@ from langchain_voyageai import VoyageAIEmbeddings
 
 Voyage AI utilizes API keys to monitor usage and manage permissions. To obtain your key, create an account on our [homepage](https://www.voyageai.com). Then, create a VoyageEmbeddings model with your API key. You can use any of the following models: ([source](https://docs.voyageai.com/docs/embeddings)):
 
+- `voyage-4-large`
+- `voyage-4`
+- `voyage-4-lite`
 - `voyage-context-3`
 - `voyage-3.5`
 - `voyage-3.5-lite`
@@ -104,9 +108,9 @@ An LLMChain is a chain that composes basic LLM functionality. It consists of a P
 
 ---
 
-<Callout icon="pen-to-square" iconType="regular">
+<Callout icon="edit">
     [Edit this page on GitHub](https://github.com/langchain-ai/docs/edit/main/src/oss/python/integrations/text_embedding/voyageai.mdx) or [file an issue](https://github.com/langchain-ai/docs/issues/new/choose).
 </Callout>
-<Tip icon="terminal" iconType="regular">
+<Callout icon="terminal-2">
     [Connect these docs](/use-these-docs) to Claude, VSCode, and more via MCP for real-time answers.
-</Tip>
+</Callout>

@@ -14,9 +14,9 @@ LangChain's streaming system lets you surface live feedback from agent runs to y
 What's possible with LangChain streaming:
 
 * <Icon icon="brain" size={16} /> [**Stream agent progress**](#agent-progress) — get state updates after each agent step.
-* <Icon icon="square-binary" size={16} /> [**Stream LLM tokens**](#llm-tokens) — stream language model tokens as they're generated.
+* <Icon icon="binary" size={16} /> [**Stream LLM tokens**](#llm-tokens) — stream language model tokens as they're generated.
 * <Icon icon="table" size={16} /> [**Stream custom updates**](#custom-updates) — emit user-defined signals (e.g., `"Fetched 10/100 records"`).
-* <Icon icon="layer-plus" size={16} /> [**Stream multiple modes**](#stream-multiple-modes) — choose from `updates` (agent progress), `messages` (LLM tokens + metadata), or `custom` (arbitrary user data).
+* <Icon icon="stack-push" size={16} /> [**Stream multiple modes**](#stream-multiple-modes) — choose from `updates` (agent progress), `messages` (LLM tokens + metadata), or `custom` (arbitrary user data).
 
 See the [common patterns](#common-patterns) section below for additional end-to-end examples.
 
@@ -42,8 +42,8 @@ To stream agent progress, use the [`stream`](https://reference.langchain.com/jav
 
 For example, if you have an agent that calls a tool once, you should see the following updates:
 
-* **LLM node**: [`AIMessage`](https://reference.langchain.com/javascript/classes/_langchain_core.messages.AIMessage.html) with tool call requests
-* **Tool node**: [`ToolMessage`](https://reference.langchain.com/javascript/classes/_langchain_core.messages.ToolMessage.html) with execution result
+* **LLM node**: [`AIMessage`](https://reference.langchain.com/javascript/langchain-core/messages/AIMessage) with tool call requests
+* **Tool node**: [`ToolMessage`](https://reference.langchain.com/javascript/langchain-core/messages/ToolMessage) with execution result
 * **LLM node**: Final AI response
 
 
@@ -151,7 +151,7 @@ const getWeather = tool(
 );
 
 const agent = createAgent({
-    model: "gpt-4o-mini",
+    model: "gpt-4.1-mini",
     tools: [getWeather],
 });
 
@@ -194,7 +194,7 @@ const getWeather = tool(
 );
 
 const agent = createAgent({
-    model: "gpt-4o-mini",
+    model: "gpt-4.1-mini",
     tools: [getWeather],
 });
 
@@ -247,7 +247,7 @@ const getWeather = tool(
 );
 
 const agent = createAgent({
-    model: "gpt-4o-mini",
+    model: "gpt-4.1-mini",
     tools: [getWeather],
 });
 
@@ -278,7 +278,7 @@ Set `streaming: false` when initializing the model.
 import { ChatOpenAI } from "@langchain/openai";
 
 const model = new ChatOpenAI({
-  model: "gpt-4o",
+  model: "gpt-4.1",
   streaming: false,  // [!code highlight]
 });
 ```
@@ -306,9 +306,9 @@ See the [LangGraph streaming guide](/oss/javascript/langgraph/streaming#disable-
 
 ---
 
-<Callout icon="pen-to-square" iconType="regular">
+<Callout icon="edit">
     [Edit this page on GitHub](https://github.com/langchain-ai/docs/edit/main/src/oss/langchain/streaming/overview.mdx) or [file an issue](https://github.com/langchain-ai/docs/issues/new/choose).
 </Callout>
-<Tip icon="terminal" iconType="regular">
+<Callout icon="terminal-2">
     [Connect these docs](/use-these-docs) to Claude, VSCode, and more via MCP for real-time answers.
-</Tip>
+</Callout>

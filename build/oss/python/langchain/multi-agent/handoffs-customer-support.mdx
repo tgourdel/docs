@@ -497,7 +497,7 @@ agent = create_agent(
     middleware=[
         apply_step_config,
         SummarizationMiddleware(  # [!code highlight]
-            model="gpt-4o-mini",
+            model="gpt-4.1-mini",
             trigger=("tokens", 4000),
             keep=("messages", 10)
         )
@@ -779,7 +779,7 @@ agent = create_agent(
     middleware=[
         apply_step_config,
         SummarizationMiddleware(
-            model="gpt-4o-mini",
+            model="gpt-4.1-mini",
             trigger=("tokens", 4000),
             keep=("messages", 10)
         )
@@ -832,9 +832,9 @@ if __name__ == "__main__":
 
 ---
 
-<Callout icon="pen-to-square" iconType="regular">
+<Callout icon="edit">
     [Edit this page on GitHub](https://github.com/langchain-ai/docs/edit/main/src/oss/langchain/multi-agent/handoffs-customer-support.mdx) or [file an issue](https://github.com/langchain-ai/docs/issues/new/choose).
 </Callout>
-<Tip icon="terminal" iconType="regular">
+<Callout icon="terminal-2">
     [Connect these docs](/use-these-docs) to Claude, VSCode, and more via MCP for real-time answers.
-</Tip>
+</Callout>

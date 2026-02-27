@@ -816,7 +816,7 @@ Tool: send_email
 Args: {'to': ['designteam@example.com'], 'subject': 'Reminder: Review New Mockups Before Meeting Next Tuesday at 2pm', 'body': "Hello Team,\n\nThis is a reminder to review the new mockups ahead of our meeting scheduled for next Tuesday at 2pm. Your feedback and insights will be valuable for our discussion and next steps.\n\nPlease ensure you've gone through the designs and are ready to share your thoughts during the meeting.\n\nThank you!\n\nBest regards,\n[Your Name]"}
 ```
 
-We can specify decisions for each interrupt by referring to its ID using a [`Command`](https://reference.langchain.com/javascript/classes/_langchain_langgraph.index.Command.html). Refer to the [human-in-the-loop guide](/oss/javascript/langchain/human-in-the-loop) for additional details. For demonstration purposes, here we will accept the calendar event, but edit the subject of the outbound email:
+We can specify decisions for each interrupt by referring to its ID using a [`Command`](https://reference.langchain.com/javascript/langchain-langgraph/index/Command). Refer to the [human-in-the-loop guide](/oss/javascript/langchain/human-in-the-loop) for additional details. For demonstration purposes, here we will accept the calendar event, but edit the subject of the outbound email:
 
 
 
@@ -829,7 +829,7 @@ for (const interrupt of interrupts) {
   if (actionRequest.name === "send_email") {
     // Edit email
     const editedAction = { ...actionRequest };
-    editedAction.arguments.subject = "Mockups reminder";
+    editedAction.args.subject = "Mockups reminder";
     resume[interrupt.id] = {
       decisions: [{ type: "edit", editedAction }]
     };
@@ -968,7 +968,7 @@ const scheduleEvent = tool(
 **Important:** Make sure sub-agent prompts emphasize that their final message should contain all relevant information. A common failure mode is sub-agents that perform tool calls but don't include the results in their final response.
 
 <Tip>
-For a complete working example that demonstrates the full supervisor pattern with human-in-the-loop review and advanced information flow control, check out [`supervisor_complete.ts`](https://github.com/langchain-ai/langchainjs/blob/main/examples/src/createAgent/supervisor_complete.ts) in the LangChain.js examples.
+For a complete working example that demonstrates the full supervisor pattern with human-in-the-loop review and advanced information flow control, check out [`supervisor_complete.ts`](https://github.com/langchain-ai/langchainjs/blob/main/examples/src/createAgent/supervisor.ts) in the LangChain.js examples.
 </Tip>
 
 
@@ -990,9 +990,9 @@ Learn about [handoffs](/oss/javascript/langchain/multi-agent/handoffs) for agent
 
 ---
 
-<Callout icon="pen-to-square" iconType="regular">
+<Callout icon="edit">
     [Edit this page on GitHub](https://github.com/langchain-ai/docs/edit/main/src/oss/langchain/multi-agent/subagents-personal-assistant.mdx) or [file an issue](https://github.com/langchain-ai/docs/issues/new/choose).
 </Callout>
-<Tip icon="terminal" iconType="regular">
+<Callout icon="terminal-2">
     [Connect these docs](/use-these-docs) to Claude, VSCode, and more via MCP for real-time answers.
-</Tip>
+</Callout>

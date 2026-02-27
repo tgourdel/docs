@@ -8,11 +8,13 @@ LangGraph implements a streaming system to surface real-time updates. Streaming 
 
 What's possible with LangGraph streaming:
 
-* <Icon icon="share-nodes" size={16} /> [**Stream graph state**](#stream-graph-state) — get state updates / values with `updates` and `values` modes.
-* <Icon icon="square-poll-horizontal" size={16} /> [**Stream subgraph outputs**](#stream-subgraph-outputs) — include outputs from both the parent graph and any nested subgraphs.
-* <Icon icon="square-binary" size={16} /> [**Stream LLM tokens**](#messages) — capture token streams from anywhere: inside nodes, subgraphs, or tools.
+* <Icon icon="share" size={16} /> [**Stream graph state**](#stream-graph-state) — get state updates / values with `updates` and `values` modes.
+* <Icon icon="chart-bar" size={16} /> [**Stream subgraph outputs**](#stream-subgraph-outputs) — include outputs from both the parent graph and any nested subgraphs.
+* <Icon icon="binary" size={16} /> [**Stream LLM tokens**](#messages) — capture token streams from anywhere: inside nodes, subgraphs, or tools.
 * <Icon icon="table" size={16} /> [**Stream custom data**](#stream-custom-data) — send custom updates or progress signals directly from tool functions.
-* <Icon icon="layer-plus" size={16} /> [**Use multiple streaming modes**](#stream-multiple-modes) — choose from `values` (full state), `updates` (state deltas), `messages` (LLM tokens + metadata), `custom` (arbitrary user data), or `debug` (detailed traces).
+
+* <Icon icon="stack-push" size={16} /> [**Use multiple streaming modes**](#stream-multiple-modes) — choose from `values` (full state), `updates` (state deltas), `messages` (LLM tokens + metadata), `custom` (arbitrary user data), or `debug` (detailed traces).
+
 
 ## Supported stream modes
 
@@ -21,13 +23,16 @@ Pass one or more of the following stream modes as a list to the [`stream`](https
 
 
 
-| Mode       | Description                                                                                                                                                                         |
-| ---------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `values`   | Streams the full value of the state after each step of the graph.                                                                                                                   |
-| `updates`  | Streams the updates to the state after each step of the graph. If multiple updates are made in the same step (e.g., multiple nodes are run), those updates are streamed separately. |
-| `custom`   | Streams custom data from inside your graph nodes.                                                                                                                                   |
-| `messages` | Streams 2-tuples (LLM token, metadata) from any graph nodes where an LLM is invoked.                                                                                                |
-| `debug`    | Streams as much information as possible throughout the execution of the graph.                                                                                                      |
+
+
+| Mode | Description |
+| ---- | ----------- |
+| `values` | Streams the full value of the state after each step of the graph. |
+| `updates` | Streams the updates to the state after each step of the graph. If multiple updates are made in the same step (e.g., multiple nodes are run), those updates are streamed separately. |
+| `custom` | Streams custom data from inside your graph nodes. |
+| `messages` | Streams 2-tuples (LLM token, metadata) from any graph nodes where an LLM is invoked. |
+| `debug` | Streams as much information as possible throughout the execution of the graph. |
+
 
 ## Basic usage example
 
@@ -280,7 +285,7 @@ The streamed output from [`messages` mode](#supported-stream-modes) is a tuple `
 
 <Warning>
 **Manual config required for async in Python < 3.11**
-When using Python < 3.11 with async code, you must explicitly pass [`RunnableConfig`](https://reference.langchain.com/python/langchain_core/runnables/#langchain_core.runnables.RunnableConfig) to `ainvoke()` to enable proper streaming. See [Async with Python < 3.11](#async) for details or upgrade to Python 3.11+.
+When using Python < 3.11 with async code, you must explicitly pass [`RunnableConfig`](https://reference.langchain.com/python/langchain-core/runnables/config/RunnableConfig) to `ainvoke()` to enable proper streaming. See [Async with Python < 3.11](#async) for details or upgrade to Python 3.11+.
 </Warning>
 
 ```python
@@ -296,7 +301,7 @@ class MyState:
     joke: str = ""
 
 
-model = init_chat_model(model="gpt-4o-mini")
+model = init_chat_model(model="gpt-4.1-mini")
 
 def call_model(state: MyState):
     """Call the LLM to generate a joke about a topic"""
@@ -337,9 +342,9 @@ You can associate `tags` with LLM invocations to filter the streamed tokens by L
 from langchain.chat_models import init_chat_model
 
 # model_1 is tagged with "joke"
-model_1 = init_chat_model(model="gpt-4o-mini", tags=['joke'])
+model_1 = init_chat_model(model="gpt-4.1-mini", tags=['joke'])
 # model_2 is tagged with "poem"
-model_2 = init_chat_model(model="gpt-4o-mini", tags=['poem'])
+model_2 = init_chat_model(model="gpt-4.1-mini", tags=['poem'])
 
 graph = ... # define a graph that uses these LLMs
 
@@ -366,9 +371,9 @@ async for msg, metadata in graph.astream(
   from langgraph.graph import START, StateGraph
 
   # The joke_model is tagged with "joke"
-  joke_model = init_chat_model(model="gpt-4o-mini", tags=["joke"])
+  joke_model = init_chat_model(model="gpt-4.1-mini", tags=["joke"])
   # The poem_model is tagged with "poem"
-  poem_model = init_chat_model(model="gpt-4o-mini", tags=["poem"])
+  poem_model = init_chat_model(model="gpt-4.1-mini", tags=["poem"])
 
 
   class State(TypedDict):
@@ -444,7 +449,7 @@ for msg, metadata in graph.stream(
   from langgraph.graph import START, StateGraph
   from langchain_openai import ChatOpenAI
 
-  model = ChatOpenAI(model="gpt-4o-mini")
+  model = ChatOpenAI(model="gpt-4.1-mini")
 
 
   class State(TypedDict):
@@ -500,12 +505,12 @@ for msg, metadata in graph.stream(
 
 To send **custom user-defined data** from inside a LangGraph node or tool, follow these steps:
 
-1. Use [`get_stream_writer`](https://reference.langchain.com/python/langgraph/config/#langgraph.config.get_stream_writer) to access the stream writer and emit custom data.
+1. Use [`get_stream_writer`](https://reference.langchain.com/python/langgraph/config/get_stream_writer) to access the stream writer and emit custom data.
 2. Set `stream_mode="custom"` when calling `.stream()` or `.astream()` to get the custom data in the stream. You can combine multiple modes (e.g., `["updates", "custom"]`), but at least one must be `"custom"`.
 
 <Warning>
-**No [`get_stream_writer`](https://reference.langchain.com/python/langgraph/config/#langgraph.config.get_stream_writer) in async for Python < 3.11**
-In async code running on Python < 3.11, [`get_stream_writer`](https://reference.langchain.com/python/langgraph/config/#langgraph.config.get_stream_writer) will not work.
+**No [`get_stream_writer`](https://reference.langchain.com/python/langgraph/config/get_stream_writer) in async for Python < 3.11**
+In async code running on Python < 3.11, [`get_stream_writer`](https://reference.langchain.com/python/langgraph/config/get_stream_writer) will not work.
 Instead, add a `writer` parameter to your node or tool and pass it manually.
 See [Async with Python < 3.11](#async) for usage examples.
 </Warning>
@@ -572,6 +577,8 @@ See [Async with Python < 3.11](#async) for usage examples.
 
 
 
+
+
 ## Use with any LLM
 
 You can use `stream_mode="custom"` to stream data from **any LLM API** — even if that API does **not** implement the LangChain chat model interface.
@@ -623,7 +630,7 @@ for chunk in graph.stream(
   from openai import AsyncOpenAI
 
   openai_client = AsyncOpenAI()
-  model_name = "gpt-4o-mini"
+  model_name = "gpt-4.1-mini"
 
 
   async def stream_tokens(model_name: str, messages: list[dict]):
@@ -700,7 +707,7 @@ for chunk in graph.stream(
   )
   ```
 
-  Let's invoke the graph with an [`AIMessage`](https://reference.langchain.com/python/langchain/messages/#langchain.messages.AIMessage) that includes a tool call:
+  Let's invoke the graph with an [`AIMessage`](https://reference.langchain.com/python/langchain-core/messages/ai/AIMessage) that includes a tool call:
 
   ```python
   inputs = {
@@ -779,7 +786,7 @@ In Python versions < 3.11, [asyncio tasks](https://docs.python.org/3/library/asy
 This limits LangGraph ability to automatically propagate context, and affects LangGraph's streaming mechanisms in two key ways:
 
 1. You **must** explicitly pass [`RunnableConfig`](https://python.langchain.com/docs/concepts/runnables/#runnableconfig) into async LLM calls (e.g., `ainvoke()`), as callbacks are not automatically propagated.
-2. You **cannot** use [`get_stream_writer`](https://reference.langchain.com/python/langgraph/config/#langgraph.config.get_stream_writer) in async nodes or tools — you must pass a `writer` argument directly.
+2. You **cannot** use [`get_stream_writer`](https://reference.langchain.com/python/langgraph/config/get_stream_writer) in async nodes or tools — you must pass a `writer` argument directly.
 
 <Accordion title="Extended example: async LLM call with manual config">
   ```python
@@ -787,7 +794,7 @@ This limits LangGraph ability to automatically propagate context, and affects La
   from langgraph.graph import START, StateGraph
   from langchain.chat_models import init_chat_model
 
-  model = init_chat_model(model="gpt-4o-mini")
+  model = init_chat_model(model="gpt-4.1-mini")
 
   class State(TypedDict):
       topic: str
@@ -854,9 +861,9 @@ This limits LangGraph ability to automatically propagate context, and affects La
 
 ---
 
-<Callout icon="pen-to-square" iconType="regular">
+<Callout icon="edit">
     [Edit this page on GitHub](https://github.com/langchain-ai/docs/edit/main/src/oss/langgraph/streaming.mdx) or [file an issue](https://github.com/langchain-ai/docs/issues/new/choose).
 </Callout>
-<Tip icon="terminal" iconType="regular">
+<Callout icon="terminal-2">
     [Connect these docs](/use-these-docs) to Claude, VSCode, and more via MCP for real-time answers.
-</Tip>
+</Callout>

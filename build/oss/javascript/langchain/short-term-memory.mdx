@@ -66,26 +66,29 @@ const checkpointer = PostgresSaver.fromConnString(DB_URI);
 ```
 
 
+<Note>
+    For more checkpointer options including SQLite, Postgres, and Azure Cosmos DB, see the [list of checkpointer libraries](/oss/javascript/langgraph/persistence#checkpointer-libraries) in the Persistence documentation.
+</Note>
 
 ## Customizing agent memory
 
 
 
-You can extend the agent state by creating custom middleware with a state schema. Custom state schemas can be passed using the `stateSchema` parameter in middleware.
+You can extend the agent state by creating custom middleware with a state schema. Custom state schemas can be passed using the `stateSchema` parameter in middleware. Use the `StateSchema` class for state definitions preferably (plain Zod objects are also supported).
 
 ```typescript
-import * as z from "zod";
 import { createAgent, createMiddleware } from "langchain";
-import { MemorySaver } from "@langchain/langgraph";
+import { StateSchema, MemorySaver } from "@langchain/langgraph";
+import * as z from "zod";
 
-const customStateSchema = z.object({  // [!code highlight]
+const CustomState = new StateSchema({  // [!code highlight]
     userId: z.string(),  // [!code highlight]
     preferences: z.record(z.string(), z.any()),  // [!code highlight]
 });  // [!code highlight]
 
 const stateExtensionMiddleware = createMiddleware({
     name: "StateExtension",
-    stateSchema: customStateSchema,  // [!code highlight]
+    stateSchema: CustomState,  // [!code highlight]
 });
 
 const checkpointer = new MemorySaver();
@@ -116,10 +119,10 @@ With [short-term memory](#add-short-term-memory) enabled, long conversations can
     <Card title="Delete messages" icon="trash" href="#delete-messages" arrow>
         Delete messages from LangGraph state permanently
     </Card>
-    <Card title="Summarize messages" icon="layer-group" href="#summarize-messages" arrow>
+    <Card title="Summarize messages" icon="stack-2" href="#summarize-messages" arrow>
         Summarize earlier messages in the history and replace them with a summary
     </Card>
-    <Card title="Custom strategies" icon="gears">
+    <Card title="Custom strategies" icon="adjustments">
         Custom strategies (e.g., message filtering, etc.)
     </Card>
 </CardGroup>
@@ -136,7 +139,7 @@ One way to decide when to truncate messages is to count the tokens in the messag
 
 
 
-To trim message history in an agent, use [`createMiddleware`](https://reference.langchain.com/javascript/functions/langchain.index.createMiddleware.html) with a `beforeModel` hook:
+To trim message history in an agent, use [`createMiddleware`](https://reference.langchain.com/javascript/langchain/index/createMiddleware) with a `beforeModel` hook:
 
 ```typescript
 import { RemoveMessage } from "@langchain/core/messages";
@@ -168,7 +171,7 @@ const trimMessages = createMiddleware({
 
 const checkpointer = new MemorySaver();
 const agent = createAgent({
-  model: "gpt-4o",
+  model: "gpt-4.1",
   tools: [],
   middleware: [trimMessages],
   checkpointer,
@@ -184,7 +187,7 @@ This is useful when you want to remove specific messages or clear the entire mes
 
 
 
-To delete messages from the graph state, you can use the `RemoveMessage`. For `RemoveMessage` to work, you need to use a state key with [`messagesStateReducer`](https://reference.langchain.com/javascript/functions/_langchain_langgraph.index.messagesStateReducer.html) [reducer](/oss/javascript/langgraph/graph-api#reducers), like `MessagesValue`.
+To delete messages from the graph state, you can use the `RemoveMessage`. For `RemoveMessage` to work, you need to use a state key with [`messagesStateReducer`](https://reference.langchain.com/javascript/langchain-langgraph/index/messagesStateReducer) [reducer](/oss/javascript/langgraph/graph-api#reducers), like `MessagesValue`.
 
 To remove specific messages:
 
@@ -236,7 +239,7 @@ const deleteOldMessages = createMiddleware({
 });
 
 const agent = createAgent({
-  model: "gpt-4o",
+  model: "gpt-4.1",
   tools: [],
   systemPrompt: "Please be concise and to the point.",
   middleware: [deleteOldMessages],
@@ -300,11 +303,11 @@ import { MemorySaver } from "@langchain/langgraph";
 const checkpointer = new MemorySaver();
 
 const agent = createAgent({
-  model: "gpt-4o",
+  model: "gpt-4.1",
   tools: [],
   middleware: [
     summarizationMiddleware({
-      model: "gpt-4o-mini",
+      model: "gpt-4.1-mini",
       trigger: { tokens: 4000 },
       keep: { messages: 20 },
     }),
@@ -339,15 +342,16 @@ The `runtime` parameter is hidden from the tool signature (so the model doesn't 
 
 
 ```typescript
-import * as z from "zod";
 import { createAgent, tool, type ToolRuntime } from "langchain";
+import { StateSchema } from "@langchain/langgraph";
+import * as z from "zod";
 
-const stateSchema = z.object({
+const CustomState = new StateSchema({
   userId: z.string(),
 });
 
 const getUserInfo = tool(
-  async (_, config: ToolRuntime<z.infer<typeof stateSchema>>) => {
+  async (_, config: ToolRuntime<typeof CustomState.State>) => {
     const userId = config.state.userId;
     return userId === "user_123" ? "John Doe" : "Unknown User";
   },
@@ -361,7 +365,7 @@ const getUserInfo = tool(
 const agent = createAgent({
   model: "gpt-5-nano",
   tools: [getUserInfo],
-  stateSchema,
+  stateSchema: CustomState,
 });
 
 const result = await agent.invoke(
@@ -388,16 +392,16 @@ This is useful for persisting intermediate results or making information accessi
 
 
 ```typescript
-import * as z from "zod";
 import { tool, createAgent, ToolMessage, type ToolRuntime } from "langchain";
-import { Command } from "@langchain/langgraph";
+import { Command, StateSchema } from "@langchain/langgraph";
+import * as z from "zod";
 
-const CustomState = z.object({
+const CustomState = new StateSchema({
   userId: z.string().optional(),
 });
 
 const updateUserInfo = tool(
-  async (_, config: ToolRuntime<typeof CustomState>) => {
+  async (_, config: ToolRuntime<typeof CustomState.State>) => {
     const userId = config.state.userId;
     const name = userId === "user_123" ? "John Smith" : "Unknown user";
     return new Command({
@@ -644,7 +648,6 @@ const validateResponse = createMiddleware({
       return {
         messages: [
           new RemoveMessage({ id: REMOVE_ALL_MESSAGES }),
-          ...state.messages,
         ],
       };
     }
@@ -661,9 +664,9 @@ const agent = createAgent({
 
 ---
 
-<Callout icon="pen-to-square" iconType="regular">
+<Callout icon="edit">
     [Edit this page on GitHub](https://github.com/langchain-ai/docs/edit/main/src/oss/langchain/short-term-memory.mdx) or [file an issue](https://github.com/langchain-ai/docs/issues/new/choose).
 </Callout>
-<Tip icon="terminal" iconType="regular">
+<Callout icon="terminal-2">
     [Connect these docs](/use-these-docs) to Claude, VSCode, and more via MCP for real-time answers.
-</Tip>
+</Callout>

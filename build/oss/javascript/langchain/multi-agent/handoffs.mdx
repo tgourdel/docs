@@ -81,7 +81,7 @@ For a complete implementation, see the tutorial below.
 
 <Card
     title="Tutorial: Build customer support with handoffs"
-    icon="people-arrows"
+    icon="users"
     href="/oss/javascript/langchain/multi-agent/handoffs-customer-support"
     arrow cta="Learn more"
 >
@@ -139,18 +139,18 @@ import {
   ToolMessage,
   type ToolRuntime,
 } from "langchain";
-import { Command, MemorySaver } from "@langchain/langgraph";
+import { Command, MemorySaver, StateSchema } from "@langchain/langgraph";
 import { z } from "zod";
 
 // 1. Define state with current_step tracker
-const SupportState = z.object({ // [!code highlight]
+const SupportState = new StateSchema({ // [!code highlight]
   currentStep: z.string().default("triage"), // [!code highlight]
   warrantyStatus: z.string().optional(),
 });
 
 // 2. Tools update currentStep via Command
 const recordWarrantyStatus = tool(
-  async ({ status }, config: ToolRuntime<typeof SupportState>) => {
+  async ({ status }, config: ToolRuntime<typeof SupportState.State>) => {
     return new Command({ // [!code highlight]
       update: { // [!code highlight]
         messages: [ // [!code highlight]
@@ -224,20 +224,18 @@ Subgraph handoffs require careful **[context engineering](/oss/javascript/langch
 ```typescript
 import {
   tool,
-  BaseMessage,
   ToolMessage,
   AIMessage,
   type ToolRuntime,
 } from "langchain";
-import { Command } from "@langchain/langgraph";
-import { z } from "zod";
+import { Command, StateSchema, MessagesValue } from "@langchain/langgraph";
 
-const stateSchema = z.object({
-  messages: z.array(z.instanceof(BaseMessage)),
+const CustomState = new StateSchema({
+  messages: MessagesValue,
 });
 
 const transferToSales = tool(
-  async (_, runtime: ToolRuntime<typeof stateSchema>) => {
+  async (_, runtime: ToolRuntime<typeof CustomState.State>) => {
     const lastAiMessage = runtime.state.messages // [!code highlight]
       .reverse() // [!code highlight]
       .find(AIMessage.isInstance); // [!code highlight]
@@ -275,21 +273,25 @@ import {
   StateGraph,
   START,
   END,
-  MessagesZodState,
+  StateSchema,
+  MessagesValue,
   Command,
+  ConditionalEdgeRouter,
+  GraphNode,
 } from "@langchain/langgraph";
 import { createAgent, AIMessage, ToolMessage } from "langchain";
 import { tool, ToolRuntime } from "@langchain/core/tools";
 import { z } from "zod/v4";
 
 // 1. Define state with active_agent tracker
-const MultiAgentState = MessagesZodState.extend({
+const MultiAgentState = new StateSchema({
+  messages: MessagesValue,
   activeAgent: z.string().optional(),
 });
 
 // 2. Create handoff tools
 const transferToSales = tool(
-  async (_, runtime: ToolRuntime<typeof MultiAgentState>) => {
+  async (_, runtime: ToolRuntime<typeof MultiAgentState.State>) => {
     const lastAiMessage = [...runtime.state.messages] // [!code highlight]
       .reverse() // [!code highlight]
       .find(AIMessage.isInstance); // [!code highlight]
@@ -314,7 +316,7 @@ const transferToSales = tool(
 );
 
 const transferToSupport = tool(
-  async (_, runtime: ToolRuntime<typeof MultiAgentState>) => {
+  async (_, runtime: ToolRuntime<typeof MultiAgentState.State>) => {
     const lastAiMessage = [...runtime.state.messages] // [!code highlight]
       .reverse() // [!code highlight]
       .find(AIMessage.isInstance); // [!code highlight]
@@ -354,31 +356,28 @@ const supportAgent = createAgent({
 });
 
 // 4. Create agent nodes that invoke the agents
-const callSalesAgent = async (
-  state: z.infer<typeof MultiAgentState>
-) => {
+const callSalesAgent: GraphNode<typeof MultiAgentState.State> = async (state) => {
   const response = await salesAgent.invoke(state);
   return response;
 };
 
-const callSupportAgent = async (
-  state: z.infer<typeof MultiAgentState>
-) => {
+const callSupportAgent: GraphNode<typeof MultiAgentState.State> = async (state) => {
   const response = await supportAgent.invoke(state);
   return response;
 };
 
 // 5. Create router that checks if we should end or continue
-const routeAfterAgent = (
-  state: z.infer<typeof MultiAgentState>
-): "sales_agent" | "support_agent" | "__end__" => {
+const routeAfterAgent: ConditionalEdgeRouter<
+  typeof MultiAgentState.State,
+  "sales_agent" | "support_agent"
+> = (state) => {
   const messages = state.messages ?? [];
 
   // Check the last message - if it's an AIMessage without tool calls, we're done
   if (messages.length > 0) {
     const lastMsg = messages[messages.length - 1];
     if (lastMsg instanceof AIMessage && !lastMsg.tool_calls?.length) { // [!code highlight]
-      return "__end__"; // [!code highlight]
+      return END; // [!code highlight]
     } // [!code highlight]
   }
 
@@ -387,9 +386,10 @@ const routeAfterAgent = (
   return active as "sales_agent" | "support_agent";
 };
 
-const routeInitial = (
-  state: z.infer<typeof MultiAgentState>
-): "sales_agent" | "support_agent" => {
+const routeInitial: ConditionalEdgeRouter<
+  typeof MultiAgentState.State,
+  "sales_agent" | "support_agent"
+> = (state) => {
   // Route to the active agent based on state, default to sales agent
   return (state.activeAgent ?? "sales_agent") as
     | "sales_agent"
@@ -458,7 +458,7 @@ The example below assumes only the handoff tool was called (no parallel tool cal
 
 ```typescript
 const transferToSales = tool(
-  async (_, runtime: ToolRuntime<typeof MultiAgentState>) => {
+  async (_, runtime: ToolRuntime<typeof MultiAgentState.State>) => {
     // Get the AI message that triggered this handoff
     const lastAiMessage = runtime.state.messages.at(-1);
 
@@ -505,9 +505,9 @@ As you design your multi-agent system, consider:
 
 ---
 
-<Callout icon="pen-to-square" iconType="regular">
+<Callout icon="edit">
     [Edit this page on GitHub](https://github.com/langchain-ai/docs/edit/main/src/oss/langchain/multi-agent/handoffs.mdx) or [file an issue](https://github.com/langchain-ai/docs/issues/new/choose).
 </Callout>
-<Tip icon="terminal" iconType="regular">
+<Callout icon="terminal-2">
     [Connect these docs](/use-these-docs) to Claude, VSCode, and more via MCP for real-time answers.
-</Tip>
+</Callout>

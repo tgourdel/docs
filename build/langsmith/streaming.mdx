@@ -649,7 +649,7 @@ The streamed output from [`messages-tuple` mode](#supported-stream-modes) is a t
         topic: str
         joke: str = ""
 
-    model = init_chat_model(model="gpt-4o-mini")
+    model = init_chat_model(model="gpt-4.1-mini")
 
     def call_model(state: MyState):
         """Call the LLM to generate a joke about a topic"""
@@ -934,9 +934,9 @@ For API usage and implementation, refer to the [API reference](https://docs.lang
 
 ---
 
-<Callout icon="pen-to-square" iconType="regular">
+<Callout icon="edit">
     [Edit this page on GitHub](https://github.com/langchain-ai/docs/edit/main/src/langsmith/streaming.mdx) or [file an issue](https://github.com/langchain-ai/docs/issues/new/choose).
 </Callout>
-<Tip icon="terminal" iconType="regular">
+<Callout icon="terminal-2">
     [Connect these docs](/use-these-docs) to Claude, VSCode, and more via MCP for real-time answers.
-</Tip>
+</Callout>

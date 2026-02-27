@@ -1,5 +1,6 @@
 ---
-title: ChatReka
+title: "ChatReka integration"
+description: "Integrate with the ChatReka chat model using LangChain Python."
 ---
 
 This guide provides a quick overview for getting started with Reka [chat models](/oss/python/langchain/models).
@@ -234,7 +235,7 @@ Now that we have defined the tools and the LLM, we can create the agent. We will
 
 Now, we can initialize the agent with the LLM and the tools.
 
-Note that we are passing in the model, not model_with_tools. That is because [`create_agent`](https://reference.langchain.com/python/langchain/agents/#langchain.agents.create_agent) will call `.bind_tools` for us under the hood.
+Note that we are passing in the model, not model_with_tools. That is because [`create_agent`](https://reference.langchain.com/python/langchain/agents/factory/create_agent) will call `.bind_tools` for us under the hood.
 
 ```python
 from langchain.agents import create_agent
@@ -303,9 +304,9 @@ for chunk in agent_executor.stream(
 
 ---
 
-<Callout icon="pen-to-square" iconType="regular">
+<Callout icon="edit">
     [Edit this page on GitHub](https://github.com/langchain-ai/docs/edit/main/src/oss/python/integrations/chat/reka.mdx) or [file an issue](https://github.com/langchain-ai/docs/issues/new/choose).
 </Callout>
-<Tip icon="terminal" iconType="regular">
+<Callout icon="terminal-2">
     [Connect these docs](/use-these-docs) to Claude, VSCode, and more via MCP for real-time answers.
-</Tip>
+</Callout>

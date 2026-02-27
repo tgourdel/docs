@@ -133,7 +133,7 @@ Now we will start building components ([nodes](/oss/javascript/langgraph/graph-a
 
   const generateQueryOrRespond: GraphNode<typeof State> = async (state) => {
     const model = new ChatOpenAI({
-      model: "gpt-4o",
+      model: "gpt-4.1",
       temperature: 0,
     }).bindTools(tools);  // [!code highlight]
 
@@ -215,7 +215,7 @@ Now we will start building components ([nodes](/oss/javascript/langgraph/graph-a
 
   const gradeDocuments: GraphNode<typeof State> = async (state) => {
     const model = new ChatOpenAI({
-      model: "gpt-4o",
+      model: "gpt-4.1",
       temperature: 0,
     }).withStructuredOutput(gradeDocumentsSchema);
 
@@ -303,7 +303,7 @@ Now we will start building components ([nodes](/oss/javascript/langgraph/graph-a
     const question = state.messages.at(0)?.content;
 
     const model = new ChatOpenAI({
-      model: "gpt-4o",
+      model: "gpt-4.1",
       temperature: 0,
     });
 
@@ -368,7 +368,7 @@ Now we will start building components ([nodes](/oss/javascript/langgraph/graph-a
     );
 
     const llm = new ChatOpenAI({
-      model: "gpt-4o",
+      model: "gpt-4.1",
       temperature: 0,
     });
 
@@ -430,7 +430,7 @@ Now we'll assemble all the nodes and edges into a complete graph:
   * Otherwise, respond directly to the user
 * Grade retrieved document content for relevance to the question (`gradeDocuments`) and route to next step:
   * If not relevant, rewrite the question using `rewrite` and then call `generateQueryOrRespond` again
-  * If relevant, proceed to `generate` and generate final response using the [`ToolMessage`](https://reference.langchain.com/javascript/classes/_langchain_core.messages.ToolMessage.html) with the retrieved document context
+  * If relevant, proceed to `generate` and generate final response using the [`ToolMessage`](https://reference.langchain.com/javascript/langchain-core/messages/ToolMessage) with the retrieved document context
 
 ```typescript
 import { StateGraph, START, END, ConditionalEdgeRouter } from "@langchain/langgraph";
@@ -547,9 +547,9 @@ Output from node: 'generate'
 
 ---
 
-<Callout icon="pen-to-square" iconType="regular">
+<Callout icon="edit">
     [Edit this page on GitHub](https://github.com/langchain-ai/docs/edit/main/src/oss/langgraph/agentic-rag.mdx) or [file an issue](https://github.com/langchain-ai/docs/issues/new/choose).
 </Callout>
-<Tip icon="terminal" iconType="regular">
+<Callout icon="terminal-2">
     [Connect these docs](/use-these-docs) to Claude, VSCode, and more via MCP for real-time answers.
-</Tip>
+</Callout>

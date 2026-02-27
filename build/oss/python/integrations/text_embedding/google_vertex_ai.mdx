@@ -1,5 +1,6 @@
 ---
-title: VertexAIEmbeddings
+title: "Google Vertex AI integration"
+description: "Integrate with the Google Vertex AI embedding model using LangChain Python."
 ---
 
 <Danger>
@@ -62,7 +63,7 @@ import vertexai
 vertexai.init(project=PROJECT_ID, location=LOCATION)
 ```
 
-To enable automated tracing of your model calls, set your [LangSmith](https://docs.langchain.com/langsmith/home) API key:
+To enable automated tracing of your model calls, set your [LangSmith](/langsmith/home) API key:
 
 ```python
 os.environ["LANGSMITH_TRACING"] = "true"
@@ -166,9 +167,9 @@ For detailed documentation on `Google Vertex AI Embeddings
 
 ---
 
-<Callout icon="pen-to-square" iconType="regular">
+<Callout icon="edit">
     [Edit this page on GitHub](https://github.com/langchain-ai/docs/edit/main/src/oss/python/integrations/text_embedding/google_vertex_ai.mdx) or [file an issue](https://github.com/langchain-ai/docs/issues/new/choose).
 </Callout>
-<Tip icon="terminal" iconType="regular">
+<Callout icon="terminal-2">
     [Connect these docs](/use-these-docs) to Claude, VSCode, and more via MCP for real-time answers.
-</Tip>
+</Callout>

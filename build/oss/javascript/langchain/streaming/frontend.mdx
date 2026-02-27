@@ -8,8 +8,8 @@ The `useStream` React hook provides seamless integration with LangGraph streamin
 Key features:
 
 * <Icon icon="messages" size={16} /> **Messages streaming** — Handle a stream of message chunks to form a complete message
-* <Icon icon="arrows-rotate" size={16} /> **Automatic state management** — for messages, interrupts, loading states, and errors
-* <Icon icon="code-branch" size={16} /> **Conversation branching** — Create alternate conversation paths from any point in the chat history
+* <Icon icon="refresh" size={16} /> **Automatic state management** — for messages, interrupts, loading states, and errors
+* <Icon icon="git-branch" size={16} /> **Conversation branching** — Create alternate conversation paths from any point in the chat history
 * <Icon icon="palette" size={16} /> **UI-agnostic design** — Bring your own components and styling
 
 ## Installation
@@ -71,7 +71,7 @@ Learn how to [deploy your agents to LangSmith](/oss/javascript/langchain/deploy)
 </ParamField>
 
 <ParamField body="apiUrl" type="string">
-    The URL of the LangGraph server. Defaults to `http://localhost:2024` for local development.
+    The URL of the Agent Server. Defaults to `http://localhost:2024` for local development.
 </ParamField>
 
 <ParamField body="apiKey" type="string">
@@ -460,17 +460,17 @@ export function BranchSwitcher({
 
 For advanced use cases, use the `experimental_branchTree` property to get the tree representation of the thread for non-message based graphs.
 
-<Card title="Try the branching example" icon="code-branch" href="https://github.com/langchain-ai/langgraphjs/tree/main/examples/ui-react/src/examples/branching-chat">
+<Card title="Try the branching example" icon="git-branch" href="https://github.com/langchain-ai/langgraphjs/tree/main/examples/ui-react/src/examples/branching-chat">
   See a complete implementation of conversation branching with edit, regenerate, and branch switching in the `branching-chat` example.
 </Card>
 
 ## Type-safe streaming
 
-The `useStream` hook supports full type inference when used with agents created via [`createAgent`](https://reference.langchain.com/javascript/functions/langchain.index.createAgent.html) or graphs created with [`StateGraph`](https://reference.langchain.com/javascript/classes/_langchain_langgraph.index.StateGraph.html). Pass `typeof agent` or `typeof graph` as the type parameter to automatically infer tool call types.
+The `useStream` hook supports full type inference when used with agents created via [`createAgent`](https://reference.langchain.com/javascript/langchain/index/createAgent) or graphs created with [`StateGraph`](https://reference.langchain.com/javascript/langchain-langgraph/index/StateGraph). Pass `typeof agent` or `typeof graph` as the type parameter to automatically infer tool call types.
 
 ### With `createAgent`
 
-When using [`createAgent`](https://reference.langchain.com/javascript/functions/langchain.index.createAgent.html), tool call types are automatically inferred from the tools you register to your agent:
+When using [`createAgent`](https://reference.langchain.com/javascript/langchain/index/createAgent), tool call types are automatically inferred from the tools you register to your agent:
 
 
 
@@ -492,7 +492,7 @@ const getWeather = tool(
 );
 
 export const agent = createAgent({
-  model: "openai:gpt-4o-mini",
+  model: "openai:gpt-4.1-mini",
   tools: [getWeather],
 });
 ```
@@ -518,7 +518,7 @@ function Chat() {
 
 ### With `StateGraph`
 
-For custom [`StateGraph`](https://reference.langchain.com/javascript/classes/_langchain_langgraph.index.StateGraph.html) applications, the state types are inferred from the graph's annotation:
+For custom [`StateGraph`](https://reference.langchain.com/javascript/langchain-langgraph/index/StateGraph) applications, the state types are inferred from the graph's annotation:
 
 
 
@@ -528,7 +528,7 @@ For custom [`StateGraph`](https://reference.langchain.com/javascript/classes/_la
 import { StateGraph, MessagesAnnotation, START, END } from "@langchain/langgraph";
 import { ChatOpenAI } from "@langchain/openai";
 
-const model = new ChatOpenAI({ model: "gpt-4o-mini" });
+const model = new ChatOpenAI({ model: "gpt-4.1-mini" });
 
 const workflow = new StateGraph(MessagesAnnotation)
   .addNode("agent", async (state) => {
@@ -1073,49 +1073,51 @@ function MultiAgentChat() {
 
 ```typescript agent.ts
 import { ChatOpenAI } from "@langchain/openai";
-import { StateGraph, START, END, Send } from "@langchain/langgraph";
-import { withLangGraph } from "@langchain/langgraph/zod";
-import { BaseMessage, AIMessage } from "@langchain/core/messages";
+import {
+  StateGraph,
+  START,
+  END,
+  Send,
+  StateSchema,
+  MessagesValue,
+  GraphNode,
+  ConditionalEdgeRouter,
+} from "@langchain/langgraph";
+import { AIMessage } from "@langchain/core/messages";
 import { z } from "zod";
 
 // Use different model instances for variety
-const analyticalModel = new ChatOpenAI({ model: "gpt-4o-mini", temperature: 0.3 });
-const creativeModel = new ChatOpenAI({ model: "gpt-4o-mini", temperature: 0.9 });
-const practicalModel = new ChatOpenAI({ model: "gpt-4o-mini", temperature: 0.5 });
+const analyticalModel = new ChatOpenAI({ model: "gpt-4.1-mini", temperature: 0.3 });
+const creativeModel = new ChatOpenAI({ model: "gpt-4.1-mini", temperature: 0.9 });
+const practicalModel = new ChatOpenAI({ model: "gpt-4.1-mini", temperature: 0.5 });
 
 // Define the state schema
-const StateAnnotation = z.object({
-  messages: withLangGraph(z.custom<BaseMessage[]>(), {
-    reducer: {
-      fn: (left: BaseMessage[], right: BaseMessage | BaseMessage[]) =>
-        Array.isArray(right) ? left.concat(right) : left.concat([right]),
-    },
-    default: () => [],
-  }),
+const StateAnnotation = new StateSchema({
+  messages: MessagesValue,
   topic: z.string().default(""),
   analyticalResearch: z.string().default(""),
   creativeResearch: z.string().default(""),
   practicalResearch: z.string().default(""),
 });
 
-type State = z.infer<typeof StateAnnotation>;
+type State = typeof StateAnnotation.State;
 
 // Fan-out to parallel researchers
-function fanOutToResearchers(state: State): Send[] {
+const fanOutToResearchers: ConditionalEdgeRouter<State> = (state) => {
   return [
     new Send("researcher_analytical", state),
     new Send("researcher_creative", state),
     new Send("researcher_practical", state),
   ];
-}
+};
 
-async function dispatcherNode(state: State): Promise<Partial<State>> {
+const dispatcherNode: GraphNode<State> = async (state) => {
   const lastMessage = state.messages.at(-1);
   const topic = typeof lastMessage?.content === "string" ? lastMessage.content : "";
   return { topic };
-}
+};
 
-async function analyticalResearcherNode(state: State): Promise<Partial<State>> {
+const analyticalResearcherNode: GraphNode<State> = async (state) => {
   const response = await analyticalModel.invoke([
     { role: "system", content: "You are an analytical research expert. Focus on data and evidence." },
     { role: "user", content: `Research: ${state.topic}` },
@@ -1124,7 +1126,7 @@ async function analyticalResearcherNode(state: State): Promise<Partial<State>> {
     analyticalResearch: response.content as string,
     messages: [new AIMessage({ content: response.content as string, name: "researcher_analytical" })],
   };
-}
+};
 
 // Similar nodes for creative and practical researchers...
 
@@ -1278,7 +1280,7 @@ import { ChatOpenAI } from "@langchain/openai";
 import { MemorySaver } from "@langchain/langgraph";
 import { z } from "zod";
 
-const model = new ChatOpenAI({ model: "gpt-4o-mini" });
+const model = new ChatOpenAI({ model: "gpt-4.1-mini" });
 
 // Tool that requires human approval
 const sendEmail = tool(
@@ -1357,7 +1359,7 @@ export const agent = createAgent({
 </CodeGroup>
 
 
-<Card title="Try the human-in-the-loop example" icon="hand" href="https://github.com/langchain-ai/langgraphjs/tree/main/examples/ui-react/src/examples/human-in-the-loop">
+<Card title="Try the human-in-the-loop example" icon="hand-stop" href="https://github.com/langchain-ai/langgraphjs/tree/main/examples/ui-react/src/examples/human-in-the-loop">
   See a complete implementation of approval workflows with approve, reject, and edit actions in the `human-in-the-loop` example.
 </Card>
 
@@ -1612,6 +1614,101 @@ function CustomAPIChat({ apiKey }: { apiKey: string }) {
 ```
 
 
+### Example: Streaming from Next.js endpoints
+
+You can host your agent in Next.js API routes instead of running a separate Agent Server. The `useStream` hook communicates via Server-Sent Events (SSE), so any endpoint that returns the correct event format works—including your own Next.js route.
+
+<Tip>
+**When to use your own API routes vs LangSmith**
+
+For basic agent interaction (streaming, tool calls), rolling your own Next.js API routes works well. For persisting conversations, loading thread history, and conversation branching, consider [LangSmith deployments](/langsmith/deployments), which provide these features out of the box.
+</Tip>
+
+#### Server: Stream from an API route
+
+In your Next.js API route, stream the agent's output by returning a `Response` with `text/event-stream` encoding:
+
+```typescript
+// app/api/agent/route.ts
+import { NextRequest } from "next/server";
+import { createAgent, tool } from "langchain";
+import { ChatAnthropic } from "@langchain/anthropic";
+import { MemorySaver } from "@langchain/langgraph";
+import type { BaseMessage } from "@langchain/core/messages";
+
+const checkpointer = new MemorySaver();
+
+export async function POST(request: NextRequest) {
+  const body = await request.json();
+
+  const agent = createAgent({
+    model: new ChatAnthropic({ model: "claude-sonnet-4-5-20250929" }),
+    tools: [/* your tools */],
+    checkpointer,
+  });
+
+  const stream = await agent.stream(
+    { messages: body.messages },
+    {
+      encoding: "text/event-stream",
+      streamMode: ["values", "updates", "messages"],
+      configurable: body.config?.configurable,
+      recursionLimit: 10,
+    }
+  );
+
+  return new Response(stream, {
+    headers: { "Content-Type": "text/event-stream" },
+  });
+}
+```
+
+#### Client: Connect with FetchStreamTransport
+
+Use `FetchStreamTransport` to point `useStream` at your Next.js API route. Pass `transport` instead of `apiUrl` and `assistantId` when using a custom endpoint:
+
+```tsx
+import { useMemo } from "react";
+import { useStream, FetchStreamTransport } from "@langchain/langgraph-sdk/react";
+
+function ChatInterface({ apiKey }: { apiKey: string }) {
+  const transport = useMemo(() => {
+    return new FetchStreamTransport({
+      apiUrl: "/api/agent",
+      onRequest: async (url: string, init: RequestInit) => {
+        // Inject API key or other data into the request body
+        const customBody = JSON.stringify({
+          ...(JSON.parse(init.body as string) || {}),
+          apiKey,
+        });
+        return { ...init, body: customBody };
+      },
+    });
+  }, [apiKey]);
+
+  const stream = useStream({
+    transport,
+  });
+
+  return (
+    <div>
+      {stream.messages.map((message, idx) => (
+        <div key={message.id ?? idx}>{/* render message */}</div>
+      ))}
+      {stream.isLoading && <div>Loading...</div>}
+    </div>
+  );
+}
+```
+
+For thread history, pass `threadId` to `useStream` and include it in `configurable` when streaming from your API route. The agent's checkpointer will load and persist state per thread.
+
+<Card title="Full Next.js example" icon="brand-github" href="https://github.com/christian-bromann/langchain-nextjs">
+  See a complete Next.js app with LangChain agents, streaming chat, and tool calling in the [langchain-nextjs](https://github.com/christian-bromann/langchain-nextjs) repository.
+</Card>
+
+
+
 ## Related
 
 - [Streaming overview](/oss/javascript/langchain/streaming/overview) — Server-side streaming with LangChain agents
@@ -1622,9 +1719,9 @@ function CustomAPIChat({ apiKey }: { apiKey: string }) {
 
 ---
 
-<Callout icon="pen-to-square" iconType="regular">
+<Callout icon="edit">
     [Edit this page on GitHub](https://github.com/langchain-ai/docs/edit/main/src/oss/langchain/streaming/frontend.mdx) or [file an issue](https://github.com/langchain-ai/docs/issues/new/choose).
 </Callout>
-<Tip icon="terminal" iconType="regular">
+<Callout icon="terminal-2">
     [Connect these docs](/use-these-docs) to Claude, VSCode, and more via MCP for real-time answers.
-</Tip>
+</Callout>
