@@ -42,7 +42,7 @@ const getWeather = tool(
 );
 
 const agent = createAgent({
-  model: "claude-sonnet-4-5-20250929",
+  model: "claude-sonnet-4-6",
   tools: [getWeather],
 });
 
@@ -161,7 +161,7 @@ Let's walk through each step:
         import { initChatModel } from "langchain";
 
         const model = await initChatModel(
-          "claude-sonnet-4-5-20250929",
+          "claude-sonnet-4-6",
           { temperature: 0.5, timeout: 10, maxTokens: 1000 }
         );
         ```
@@ -209,7 +209,7 @@ Let's walk through each step:
         import { createAgent } from "langchain";
 
         const agent = createAgent({
-          model: "claude-sonnet-4-5-20250929",
+          model: "claude-sonnet-4-6",
           systemPrompt: systemPrompt,
           tools: [getUserLocation, getWeather],
           responseFormat,
@@ -294,7 +294,7 @@ const getUserLocation = tool(
 
 // Configure model
 const model = await initChatModel(
-  "claude-sonnet-4-5-20250929",
+  "claude-sonnet-4-6",
   { temperature: 0 }
 );
 
@@ -361,9 +361,11 @@ Congratulations! You now have an AI agent that can:
 
 ---
 
+<div className="source-links">
 <Callout icon="edit">
     [Edit this page on GitHub](https://github.com/langchain-ai/docs/edit/main/src/oss/langchain/quickstart.mdx) or [file an issue](https://github.com/langchain-ai/docs/issues/new/choose).
 </Callout>
 <Callout icon="terminal-2">
     [Connect these docs](/use-these-docs) to Claude, VSCode, and more via MCP for real-time answers.
 </Callout>
+</div>

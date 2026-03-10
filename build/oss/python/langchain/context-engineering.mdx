@@ -91,7 +91,7 @@ Control what goes into each model call - instructions, available tools, which mo
         The full list of messages (conversation history) sent to the LLM.
     </Card>
     <Card title="Tools" icon="tool" href="#tools">
-        Utilities the agent has access to to take actions.
+        Utilities the agent has access to for taking actions.
     </Card>
     <Card title="Model" icon="cpu" href="#model">
         The actual model (including configuration) to be called.
@@ -408,7 +408,15 @@ Reference these files when answering questions."""
 
 The examples above use `wrap_model_call` to make **transient** updates - modifying what messages are sent to the model for a single call without changing what's saved in state.
 
-For **persistent** updates that modify state (like the summarization example in [Life-cycle Context](#summarization)), use life-cycle hooks like `before_model` or `after_model` to permanently update the conversation history. See the [middleware documentation](/oss/python/langchain/middleware) for more details.
+For **persistent** updates that modify state, you can:
+
+- Return a [`ExtendedModelResponse`](https://reference.langchain.com/python/langchain/agents/middleware/types/ExtendedModelResponse) with a [`Command`](https://reference.langchain.com/python/langgraph/types/Command) from `wrap_model_call` to inject state updates from the model call layer.
+- Use life-cycle hooks like `before_model`, `after_model`, or `wrap_tool_call` (for tool returns) to update the conversation history. See the [middleware documentation](/oss/python/langchain/middleware) for more details.
+
+
+
+
+See [State updates](/oss/python/langchain/middleware/custom#state-updates) for more information.
 </Note>
 
 ### Tools
@@ -605,7 +613,7 @@ might change during an agent run.
     from typing import Callable
 
     # Initialize models once outside the middleware
-    large_model = init_chat_model("claude-sonnet-4-5-20250929")
+    large_model = init_chat_model("claude-sonnet-4-6")
     standard_model = init_chat_model("gpt-4.1")
     efficient_model = init_chat_model("gpt-4.1-mini")
 
@@ -662,7 +670,7 @@ might change during an agent run.
     MODEL_MAP = {
         "gpt-4.1": init_chat_model("gpt-4.1"),
         "gpt-4.1-mini": init_chat_model("gpt-4.1-mini"),
-        "claude-sonnet": init_chat_model("claude-sonnet-4-5-20250929"),
+        "claude-sonnet": init_chat_model("claude-sonnet-4-6"),
     }
 
     @wrap_model_call
@@ -713,7 +721,7 @@ might change during an agent run.
         environment: str
 
     # Initialize models once outside the middleware
-    premium_model = init_chat_model("claude-sonnet-4-5-20250929")
+    premium_model = init_chat_model("claude-sonnet-4-6")
     standard_model = init_chat_model("gpt-4.1")
     budget_model = init_chat_model("gpt-4.1-mini")
 
@@ -1258,9 +1266,11 @@ For a complete list of built-in middleware, available hooks, and how to create c
 
 ---
 
+<div className="source-links">
 <Callout icon="edit">
     [Edit this page on GitHub](https://github.com/langchain-ai/docs/edit/main/src/oss/langchain/context-engineering.mdx) or [file an issue](https://github.com/langchain-ai/docs/issues/new/choose).
 </Callout>
 <Callout icon="terminal-2">
     [Connect these docs](/use-these-docs) to Claude, VSCode, and more via MCP for real-time answers.
 </Callout>
+</div>

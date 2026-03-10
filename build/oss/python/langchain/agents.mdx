@@ -34,10 +34,12 @@ graph TD
   TOOL --"observation"--> LLM
   LLM --"finish"--> ANSWER
 
-  classDef blueHighlight fill:#0a1c25,stroke:#0a455f,color:#bae6fd;
-  classDef greenHighlight fill:#0b1e1a,stroke:#0c4c39,color:#9ce4c4;
+  classDef blueHighlight fill:#DBEAFE,stroke:#2563EB,color:#1E3A8A;
+  classDef greenHighlight fill:#DCFCE7,stroke:#16A34A,color:#14532D;
   class QUERY blueHighlight;
   class ANSWER blueHighlight;
+  class LLM greenHighlight;
+  class TOOL greenHighlight;
 ```
 
 <Info>
@@ -624,7 +626,7 @@ For more details on message types and formatting, see [Messages](/oss/python/lan
 
 ### Name
 
-Set an optional [`name`](https://reference.langchain.com/python/langchain/agents/factory/create_agent) for the agent. This is used as the node identifier when adding the agent as a subgraph in [multi-agent systems](/oss/python/langgraph/multi-agent):
+Set an optional [`name`](https://reference.langchain.com/python/langchain/agents/factory/create_agent) for the agent. This is used as the node identifier when adding the agent as a subgraph in [multi-agent systems](/oss/python/langchain/multi-agent):
 
 ```python
 agent = create_agent(
@@ -849,9 +851,11 @@ For comprehensive middleware documentation including decorators like [`@before_m
 
 ---
 
+<div className="source-links">
 <Callout icon="edit">
     [Edit this page on GitHub](https://github.com/langchain-ai/docs/edit/main/src/oss/langchain/agents.mdx) or [file an issue](https://github.com/langchain-ai/docs/issues/new/choose).
 </Callout>
 <Callout icon="terminal-2">
     [Connect these docs](/use-these-docs) to Claude, VSCode, and more via MCP for real-time answers.
 </Callout>
+</div>

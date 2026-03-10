@@ -63,7 +63,7 @@ import { createDeepAgent } from "deepagents";
 
 const agent = createDeepAgent({
     model: new ChatAnthropic({
-        model: "claude-sonnet-4-5-20250929",
+        model: "claude-sonnet-4-6",
         maxRetries: 10, // Increase for unreliable networks (default: 6)
         timeout: 120_000, // Increase timeout for slow connections
     }),
@@ -72,11 +72,11 @@ const agent = createDeepAgent({
 
 
 
-<Tip>For long-running agent tasks on unreliable networks, consider increasing `max_retries` to 10–15 and pairing it with a [checkpointer](/oss/javascript/langgraph/concepts/checkpointers) so that progress is preserved across failures.</Tip>
+<Tip>For long-running agent tasks on unreliable networks, consider increasing `max_retries` to 10–15 and pairing it with a [checkpointer](/oss/javascript/langgraph/persistence) so that progress is preserved across failures.</Tip>
 
 ## Model
 
-By default, `deepagents` uses [`claude-sonnet-4-5-20250929`](https://platform.claude.com/docs/en/about-claude/models/overview). You can customize the model by passing any supported <Tooltip tip="A string that follows the format `provider:model` (e.g. openai:gpt-5)" cta="See mappings" href="https://reference.langchain.com/python/langchain/models/#langchain.chat_models.init_chat_model(model)">model identifier string</Tooltip> or [LangChain model object](/oss/javascript/integrations/chat).
+By default, `deepagents` uses [`claude-sonnet-4-6`](https://platform.claude.com/docs/en/about-claude/models/overview). You can customize the model by passing any supported <Tooltip tip="A string that follows the format `provider:model` (e.g. openai:gpt-5)" cta="See mappings" href="https://reference.langchain.com/python/langchain/models/#langchain.chat_models.init_chat_model(model)">model identifier string</Tooltip> or [LangChain model object](/oss/javascript/integrations/chat).
 
 <Tip>
     Use the `provider:model` format (for example `openai:gpt-5`) to quickly switch between models.
@@ -178,6 +178,14 @@ If you are using memory, skills, or human-in-the-loop, the following middleware 
 - `MemoryMiddleware`: Persists and retrieves conversation context across sessions when the `memory` argument is provided
 - `SkillsMiddleware`: Enables custom skills when the `skills` argument is provided
 - `HumanInTheLoopMiddleware`: Pauses for human approval or input at specified points when the `interrupt_on` argument is provided
+
+### Pre-built middleware
+
+LangChain exposes additional pre-built middleware that let you add-on various features, such as retries, fallbacks, or PII detection. See [this page](/oss/javascript/langchain/middleware/built-in) for built-in middleware.
+
+
+
+### Custom middleware
 
 You can provide additional middleware to extend functionality, add tools, or implement custom hooks:
 
@@ -605,9 +613,11 @@ For more information and examples, see [response format](/oss/javascript/langcha
 
 ---
 
+<div className="source-links">
 <Callout icon="edit">
     [Edit this page on GitHub](https://github.com/langchain-ai/docs/edit/main/src/oss/deepagents/customization.mdx) or [file an issue](https://github.com/langchain-ai/docs/issues/new/choose).
 </Callout>
 <Callout icon="terminal-2">
     [Connect these docs](/use-these-docs) to Claude, VSCode, and more via MCP for real-time answers.
 </Callout>
+</div>

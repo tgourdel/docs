@@ -146,12 +146,15 @@ This dual approach ensures the agent maintains awareness of its goals and progre
 - Triggers at 85% of the model's `max_input_tokens` from its [model profile](/oss/javascript/langchain/models#model-profiles)
 - Keeps 10% of tokens as recent context
 - Falls back to 170,000-token trigger / 6 messages kept if model profile is unavailable
+- If any model call raises `ContextOverflowError`, Deep Agents immediately falls back to summarization and retries with summary + recent preserved messages
 - Older messages are summarized by the model
 
 **Why it's useful:**
 - Enables very long conversations without hitting context limits
 - Preserves recent context while compressing ancient history
 - Transparent to the agent (appears as a special system message)
+
+
 
 #### Long-term memory
 
@@ -235,9 +238,11 @@ For configuration details and examples, see [Memory](/oss/javascript/deepagents/
 
 ---
 
+<div className="source-links">
 <Callout icon="edit">
     [Edit this page on GitHub](https://github.com/langchain-ai/docs/edit/main/src/oss/deepagents/harness.mdx) or [file an issue](https://github.com/langchain-ai/docs/issues/new/choose).
 </Callout>
 <Callout icon="terminal-2">
     [Connect these docs](/use-these-docs) to Claude, VSCode, and more via MCP for real-time answers.
 </Callout>
+</div>

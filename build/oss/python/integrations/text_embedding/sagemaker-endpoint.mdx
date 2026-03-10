@@ -5,7 +5,7 @@ description: "Integrate with the SageMaker embedding model using LangChain Pytho
 
 Let's load the `SageMaker Endpoints Embeddings` class. The class can be used if you host, e.g. your own Hugging Face model on SageMaker.
 
-For instructions on how to do this, please see [here](https://www.philschmid.de/custom-inference-huggingface-sagemaker).
+For instructions on how to do this, see [custom inference with Hugging Face on SageMaker](https://www.philschmid.de/custom-inference-huggingface-sagemaker).
 
 **Note**: In order to handle batched requests, you will need to adjust the return line in the `predict_fn()` function within the custom `inference.py` script:
 
@@ -103,9 +103,11 @@ doc_results
 
 ---
 
+<div className="source-links">
 <Callout icon="edit">
     [Edit this page on GitHub](https://github.com/langchain-ai/docs/edit/main/src/oss/python/integrations/text_embedding/sagemaker-endpoint.mdx) or [file an issue](https://github.com/langchain-ai/docs/issues/new/choose).
 </Callout>
 <Callout icon="terminal-2">
     [Connect these docs](/use-these-docs) to Claude, VSCode, and more via MCP for real-time answers.
 </Callout>
+</div>

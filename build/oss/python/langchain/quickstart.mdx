@@ -32,7 +32,7 @@ def get_weather(city: str) -> str:
     return f"It's always sunny in {city}!"
 
 agent = create_agent(
-    model="claude-sonnet-4-5-20250929",
+    model="claude-sonnet-4-6",
     tools=[get_weather],
     system_prompt="You are a helpful assistant",
 )
@@ -123,7 +123,7 @@ Let's walk through each step:
         from langchain.chat_models import init_chat_model
 
         model = init_chat_model(
-            "claude-sonnet-4-5-20250929",
+            "claude-sonnet-4-6",
             temperature=0.5,
             timeout=10,
             max_tokens=1000
@@ -263,7 +263,7 @@ def get_user_location(runtime: ToolRuntime[Context]) -> str:
 
 # Configure model
 model = init_chat_model(
-    "claude-sonnet-4-5-20250929",
+    "claude-sonnet-4-6",
     temperature=0
 )
 
@@ -339,9 +339,11 @@ Congratulations! You now have an AI agent that can:
 
 ---
 
+<div className="source-links">
 <Callout icon="edit">
     [Edit this page on GitHub](https://github.com/langchain-ai/docs/edit/main/src/oss/langchain/quickstart.mdx) or [file an issue](https://github.com/langchain-ai/docs/issues/new/choose).
 </Callout>
 <Callout icon="terminal-2">
     [Connect these docs](/use-these-docs) to Claude, VSCode, and more via MCP for real-time answers.
 </Callout>
+</div>

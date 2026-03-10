@@ -28,7 +28,7 @@ Prompt caching is useful for the following:
 import { createAgent, anthropicPromptCachingMiddleware } from "langchain";
 
 const agent = createAgent({
-  model: "claude-sonnet-4-5-20250929",
+  model: "claude-sonnet-4-6",
   prompt: "<Your long system prompt here>",
   middleware: [anthropicPromptCachingMiddleware({ ttl: "5m" })],
 });
@@ -61,7 +61,7 @@ Please be a helpful assistant.
 `;
 
 const agent = createAgent({
-  model: "claude-sonnet-4-5-20250929",
+  model: "claude-sonnet-4-6",
   prompt: LONG_PROMPT,
   middleware: [anthropicPromptCachingMiddleware({ ttl: "5m" })],
 });
@@ -82,9 +82,11 @@ const result = await agent.invoke({
 
 ---
 
+<div className="source-links">
 <Callout icon="edit">
     [Edit this page on GitHub](https://github.com/langchain-ai/docs/edit/main/src/oss/javascript/integrations/middleware/anthropic.mdx) or [file an issue](https://github.com/langchain-ai/docs/issues/new/choose).
 </Callout>
 <Callout icon="terminal-2">
     [Connect these docs](/use-these-docs) to Claude, VSCode, and more via MCP for real-time answers.
 </Callout>
+</div>

@@ -54,8 +54,8 @@ For simplicity, the control plane offers two deployment types with different res
 
 | **Deployment Type** | **CPU/Memory**  | **Scaling**         | **Database**                                                                     |
 |---------------------|-----------------|---------------------|----------------------------------------------------------------------------------|
-| Development         | 1 CPU, 1 GB RAM | Up to 1 replica   | 10 GB disk, no backups                                                           |
-| Production          | 2 CPU, 2 GB RAM | Up to 10 replicas | Autoscaling disk, automatic backups, highly available (multi-zone configuration) |
+| Development         | 1 CPU, 1 GB RAM | Up to 1 replica   | 10 GB disk, no backups                                                           |
+| Production          | 2 CPU, 2 GB RAM | Up to 10 replicas | Autoscaling disk, automatic backups, highly available (multi-zone configuration) |
 
 CPU and memory resources are per replica.
 
@@ -139,9 +139,11 @@ When a deployment is deleted, the traces and the tracing project are not deleted
 
 ---
 
+<div className="source-links">
 <Callout icon="edit">
     [Edit this page on GitHub](https://github.com/langchain-ai/docs/edit/main/src/langsmith/control-plane.mdx) or [file an issue](https://github.com/langchain-ai/docs/issues/new/choose).
 </Callout>
 <Callout icon="terminal-2">
     [Connect these docs](/use-these-docs) to Claude, VSCode, and more via MCP for real-time answers.
 </Callout>
+</div>

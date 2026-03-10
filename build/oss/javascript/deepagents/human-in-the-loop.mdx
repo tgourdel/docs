@@ -19,6 +19,16 @@ graph LR
 
     Execute --> Agent
     Cancel --> Agent
+
+    classDef trigger fill:#DCFCE7,stroke:#16A34A,stroke-width:2px,color:#14532D
+    classDef process fill:#DBEAFE,stroke:#2563EB,stroke-width:2px,color:#1E3A8A
+    classDef decision fill:#FEF3C7,stroke:#F59E0B,stroke-width:2px,color:#78350F
+    classDef alert fill:#FEE2E2,stroke:#DC2626,stroke-width:2px,color:#7F1D1D
+
+    class Agent trigger
+    class Check,Human decision
+    class Execute process
+    class Cancel alert
 ```
 
 ## Basic configuration
@@ -213,7 +223,7 @@ const agent = createDeepAgent({
 ```
 
 
-When a subagent triggers an interrupt, the handling is the same – check for `__interrupt__` and resume with `Command`.
+When a subagent triggers an interrupt, the handling is the same—check for `interrupts` on the result and resume with `Command`.
 
 ### Interrupts within tool calls
 
@@ -380,9 +390,11 @@ Configure different tools based on their risk level:
 
 ---
 
+<div className="source-links">
 <Callout icon="edit">
     [Edit this page on GitHub](https://github.com/langchain-ai/docs/edit/main/src/oss/deepagents/human-in-the-loop.mdx) or [file an issue](https://github.com/langchain-ai/docs/issues/new/choose).
 </Callout>
 <Callout icon="terminal-2">
     [Connect these docs](/use-these-docs) to Claude, VSCode, and more via MCP for real-time answers.
 </Callout>
+</div>

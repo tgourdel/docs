@@ -1,6 +1,7 @@
 ---
 title: Deploy your app to Cloud
 sidebarTitle: Cloud quickstart
+description: Deploy your first LangGraph application to LangSmith Cloud from a GitHub repository.
 ---
 
 This is a quickstart guide for deploying your first application to LangSmith Cloud.
@@ -141,7 +142,7 @@ You can now test the API:
     curl -s --request POST \
         --url <DEPLOYMENT_URL>/runs/stream \
         --header 'Content-Type: application/json' \
-        --header "X-Api-Key: <LANGSMITH API KEY> \
+        --header "X-Api-Key: <LANGSMITH API KEY>" \
         --data "{
             \"assistant_id\": \"agent\",
             \"input\": {
@@ -168,9 +169,11 @@ You've successfully deployed your application to LangSmith Cloud. Here are some 
 
 ---
 
+<div className="source-links">
 <Callout icon="edit">
     [Edit this page on GitHub](https://github.com/langchain-ai/docs/edit/main/src/langsmith/deployment-quickstart.mdx) or [file an issue](https://github.com/langchain-ai/docs/issues/new/choose).
 </Callout>
 <Callout icon="terminal-2">
     [Connect these docs](/use-these-docs) to Claude, VSCode, and more via MCP for real-time answers.
 </Callout>
+</div>

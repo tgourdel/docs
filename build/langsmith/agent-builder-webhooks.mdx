@@ -6,7 +6,7 @@ description: Integrate agent publishing with external systems, CI/CD pipelines, 
 
 When triggered, a webhook sends a complete package of your agent's configuration and files to the specified endpoint.
 
-<Callout icon="lock" color="#DFC5FE" iconType="regular">
+<Callout icon="lock" color="#504B5F" iconType="regular">
 **Security notes:**
 
 - Webhook URLs must use HTTPS.
@@ -255,9 +255,11 @@ HTTPServer(("", 8000), WebhookHandler).serve_forever()
 
 ---
 
+<div className="source-links">
 <Callout icon="edit">
     [Edit this page on GitHub](https://github.com/langchain-ai/docs/edit/main/src/langsmith/agent-builder-webhooks.mdx) or [file an issue](https://github.com/langchain-ai/docs/issues/new/choose).
 </Callout>
 <Callout icon="terminal-2">
     [Connect these docs](/use-these-docs) to Claude, VSCode, and more via MCP for real-time answers.
 </Callout>
+</div>

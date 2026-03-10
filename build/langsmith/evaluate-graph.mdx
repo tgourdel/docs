@@ -42,7 +42,7 @@ def search(query: str) -> str:
 
 tools = [search]
 tool_node = ToolNode(tools)
-model = init_chat_model("claude-sonnet-4-5-20250929").bind_tools(tools)
+model = init_chat_model("claude-sonnet-4-6").bind_tools(tools)
 
 # Define the function that determines whether to continue or not
 def should_continue(state: State) -> Literal["tools", END]:
@@ -282,7 +282,7 @@ def search(query: str) -> str:
 
 tools = [search]
 tool_node = ToolNode(tools)
-model = init_chat_model("claude-sonnet-4-5-20250929").bind_tools(tools)
+model = init_chat_model("claude-sonnet-4-6").bind_tools(tools)
 
 # Define the function that determines whether to continue or not
 def should_continue(state: State) -> Literal["tools", END]:
@@ -397,9 +397,11 @@ experiment_results = await aevaluate(
 
 ---
 
+<div className="source-links">
 <Callout icon="edit">
     [Edit this page on GitHub](https://github.com/langchain-ai/docs/edit/main/src/langsmith/evaluate-graph.mdx) or [file an issue](https://github.com/langchain-ai/docs/issues/new/choose).
 </Callout>
 <Callout icon="terminal-2">
     [Connect these docs](/use-these-docs) to Claude, VSCode, and more via MCP for real-time answers.
 </Callout>
+</div>
