@@ -252,8 +252,7 @@ def approval_node(state: State) -> Command[Literal["proceed", "cancel"]]:
 
 
 
-When you resume the graph, pass `true` to approve or `false` to reject:
-
+When you resume the graph, pass `True` to approve or `False` to reject:
 ```python
 # To approve
 graph.invoke(Command(resume=True), config=config)

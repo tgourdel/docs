@@ -6,127 +6,154 @@ title: Streaming
 
 LangGraph implements a streaming system to surface real-time updates. Streaming is crucial for enhancing the responsiveness of applications built on LLMs. By displaying output progressively, even before a complete response is ready, streaming significantly improves user experience (UX), particularly when dealing with the latency of LLMs.
 
-What's possible with LangGraph streaming:
+## Get started
 
-* <Icon icon="share" size={16} /> [**Stream graph state**](#stream-graph-state)—get state updates / values with `updates` and `values` modes.
-* <Icon icon="chart-bar" size={16} /> [**Stream subgraph outputs**](#stream-subgraph-outputs)—include outputs from both the parent graph and any nested subgraphs.
-* <Icon icon="binary" size={16} /> [**Stream LLM tokens**](#messages)—capture token streams from anywhere: inside nodes, subgraphs, or tools.
-* <Icon icon="table" size={16} /> [**Stream custom data**](#stream-custom-data)—send custom updates or progress signals directly from tool functions.
+### Basic usage
 
-* <Icon icon="stack-push" size={16} /> [**Use multiple streaming modes**](#stream-multiple-modes)—choose from `values` (full state), `updates` (state deltas), `messages` (LLM tokens + metadata), `custom` (arbitrary user data), `checkpoints`, `tasks`, or `debug` (detailed traces).
-* <Icon icon="arrows-sort" size={16} /> [**Use v2 streaming format**](#v2-streaming-format)—opt into a unified, type-safe streaming format with `version="v2"` (requires LangGraph >= 1.1).
+LangGraph graphs expose the [`stream`](https://reference.langchain.com/python/langgraph/pregel/#langgraph.pregel.Pregel.stream) (sync) and [`astream`](https://reference.langchain.com/python/langgraph/pregel/#langgraph.pregel.Pregel.astream) (async) methods to yield streamed outputs as iterators. Pass one or more [stream modes](#stream-modes) to control what data you receive.
+
+```python
+for chunk in graph.stream(
+    {"topic": "ice cream"},
+    stream_mode=["updates", "custom"],  # [!code highlight]
+    version="v2",  # [!code highlight]
+):
+    if chunk["type"] == "updates":
+        for node_name, state in chunk["data"].items():
+            print(f"Node {node_name} updated: {state}")
+    elif chunk["type"] == "custom":
+        print(f"Status: {chunk['data']['status']}")
+```
+
+```shell title="Output"
+Status: thinking of a joke...
+Node generate_joke updated: {'joke': 'Why did the ice cream go to school? To get a sundae education!'}
+```
+
+<Accordion title="Full example">
+```python
+from typing import TypedDict
+from langgraph.graph import StateGraph, START, END
+from langgraph.config import get_stream_writer
 
 
-## Supported stream modes
+class State(TypedDict):
+    topic: str
+    joke: str
+
+
+def generate_joke(state: State):
+    writer = get_stream_writer()
+    writer({"status": "thinking of a joke..."})
+    return {"joke": f"Why did the {state['topic']} go to school? To get a sundae education!"}
+
+graph = (
+    StateGraph(State)
+    .add_node(generate_joke)
+    .add_edge(START, "generate_joke")
+    .add_edge("generate_joke", END)
+    .compile()
+)
+
+for chunk in graph.stream(
+    {"topic": "ice cream"},
+    stream_mode=["updates", "custom"],
+    version="v2",
+):
+    if chunk["type"] == "updates":
+        for node_name, state in chunk["data"].items():
+            print(f"Node {node_name} updated: {state}")
+    elif chunk["type"] == "custom":
+        print(f"Status: {chunk['data']['status']}")
+```
+
+```shell title="Output"
+Status: thinking of a joke...
+Node generate_joke updated: {'joke': 'Why did the ice cream go to school? To get a sundae education!'}
+```
+</Accordion>
+
+
+
+
+### Stream output format (v2)
+
+<Note>
+Requires LangGraph >= 1.1. All examples on this page use `version="v2"`.
+</Note>
+
+Pass `version="v2"` to `stream()` or `astream()` to get a unified output format. Every chunk is a `StreamPart` dict with a consistent shape — regardless of stream mode, number of modes, or subgraph settings:
+
+```python
+{
+    "type": "values" | "updates" | "messages" | "custom" | "checkpoints" | "tasks" | "debug",
+    "ns": (),           # namespace tuple, populated for subgraph events
+    "data": ...,        # the actual payload (type varies by stream mode)
+}
+```
+
+Each stream mode has a corresponding `TypedDict` containing [`ValuesStreamPart`](https://reference.langchain.com/python/langgraph/types/ValuesStreamPart), [`UpdatesStreamPart`](https://reference.langchain.com/python/langgraph/types/UpdatesStreamPart), [`MessagesStreamPart`](https://reference.langchain.com/python/langgraph/types/MessagesStreamPart), [`CustomStreamPart`](https://reference.langchain.com/python/langgraph/types/CustomStreamPart), [`CheckpointStreamPart`](https://reference.langchain.com/python/langgraph/types/CheckpointStreamPart), [`TasksStreamPart`](https://reference.langchain.com/python/langgraph/types/TasksStreamPart), [`DebugStreamPart`](https://reference.langchain.com/python/langgraph/types/DebugStreamPart). You can import these types from `langgraph.types`. The union type [`StreamPart`](https://reference.langchain.com/python/langgraph/types/StreamPart) is a disjoing union on `part["type"]`, enabling full type narrowing in editors and type checkers.
+
+With v1 (default), the output format changes based on your streaming options (single mode returns raw data, multiple modes return `(mode, data)` tuples, subgraphs return `(namespace, data)` tuples). With v2, the format is always the same:
+
+<CodeGroup>
+```python v2 (new)
+for chunk in graph.stream(inputs, stream_mode="updates", version="v2"):
+    print(chunk["type"])  # "updates"
+    print(chunk["ns"])    # ()
+    print(chunk["data"])  # {"node_name": {"key": "value"}}
+```
+```python v1 (current default)
+for chunk in graph.stream(inputs, stream_mode="updates"):
+    print(chunk)  # {"node_name": {"key": "value"}}
+```
+</CodeGroup>
+
+The v2 format also enables type narrowing, which means you can filter chunks by `chunk["type"]` and get the correct payload type. Each branch narrows `part["data"]` to the specific type for that mode:
+
+```python
+for part in graph.stream(
+    {"topic": "ice cream"},
+    stream_mode=["values", "updates", "messages", "custom"],
+    version="v2",
+):
+    if part["type"] == "values":
+        # ValuesStreamPart — full state snapshot after each step
+        print(f"State: topic={part['data']['topic']}")
+    elif part["type"] == "updates":
+        # UpdatesStreamPart — only the changed keys from each node
+        for node_name, state in part["data"].items():
+            print(f"Node `{node_name}` updated: {state}")
+    elif part["type"] == "messages":
+        # MessagesStreamPart — (message_chunk, metadata) from LLM calls
+        msg, metadata = part["data"]
+        print(msg.content, end="", flush=True)
+    elif part["type"] == "custom":
+        # CustomStreamPart — arbitrary data from get_stream_writer()
+        print(f"Progress: {part['data']['progress']}%")
+```
+
+
+## Stream modes
 
 Pass one or more of the following stream modes as a list to the [`stream`](https://reference.langchain.com/python/langgraph/graphs/#langgraph.graph.state.CompiledStateGraph.stream) or [`astream`](https://reference.langchain.com/python/langgraph/graphs/#langgraph.graph.state.CompiledStateGraph.astream) methods:
 
+| Mode | Type | Description |
+| :--- | :--- | :---------- |
+| [values](#graph-state) | [`ValuesStreamPart`](https://reference.langchain.com/python/langgraph/types/ValuesStreamPart) | Full state after each step. |
+| [updates](#graph-state) | [`UpdatesStreamPart`](https://reference.langchain.com/python/langgraph/types/UpdatesStreamPart) | State updates after each step. Multiple updates in the same step are streamed separately. |
+| [messages](#llm-tokens) | [`MessagesStreamPart`](https://reference.langchain.com/python/langgraph/types/MessagesStreamPart) | 2-tuples of (LLM token, metadata) from LLM calls. |
+| [custom](#custom-data) | [`CustomStreamPart`](https://reference.langchain.com/python/langgraph/types/CustomStreamPart) | Custom data emitted from nodes via [`get_stream_writer`](https://reference.langchain.com/python/langgraph/config/get_stream_writer). |
+| [checkpoints](#checkpoints) | [`CheckpointStreamPart`](https://reference.langchain.com/python/langgraph/types/CheckpointStreamPart) | Checkpoint events (same format as `get_state()`). Requires a checkpointer. |
+| [tasks](#tasks) | [`TasksStreamPart`](https://reference.langchain.com/python/langgraph/types/TasksStreamPart) | Task start/finish events with results and errors. Requires a checkpointer. |
+| [debug](#debug) | [`DebugStreamPart`](https://reference.langchain.com/python/langgraph/types/DebugStreamPart) | All available info — combines `checkpoints` and `tasks` with extra metadata. |
 
 
 
 
+<a id="messages"></a>
 
-| Mode | Description |
-| ---- | ----------- |
-| `values` | Streams the full value of the state after each step of the graph. |
-| `updates` | Streams the updates to the state after each step of the graph. If multiple updates are made in the same step (e.g., multiple nodes are run), those updates are streamed separately. |
-| `custom` | Streams custom data from inside your graph nodes. |
-| `messages` | Streams 2-tuples (LLM token, metadata) from any graph nodes where an LLM is invoked. |
-| `checkpoints` | Streams checkpoint events in the same format as `get_state()`. Requires a checkpointer. |
-| `tasks` | Streams task start and finish events, including results and errors. Requires a checkpointer. |
-| `debug` | Streams as much information as possible throughout the execution of the graph (combines `checkpoints` and `tasks` events with additional metadata). |
-
-
-## Basic usage example
-
-LangGraph graphs expose the [`stream`](https://reference.langchain.com/python/langgraph/pregel/#langgraph.pregel.Pregel.stream) (sync) and [`astream`](https://reference.langchain.com/python/langgraph/pregel/#langgraph.pregel.Pregel.astream) (async) methods to yield streamed outputs as iterators.
-
-<CodeGroup>
-```python v2
-for chunk in graph.stream(inputs, stream_mode="updates", version="v2"):
-    if chunk["type"] == "updates":
-        print(chunk["data"])
-```
-```python v1
-for chunk in graph.stream(inputs, stream_mode="updates"):
-    print(chunk)
-```
-</CodeGroup>
-
-
-
-
-
-<Accordion title="Extended example: streaming updates">
-  ```python
-  from typing import TypedDict
-  from langgraph.graph import StateGraph, START, END
-
-  class State(TypedDict):
-      topic: str
-      joke: str
-
-  def refine_topic(state: State):
-      return {"topic": state["topic"] + " and cats"}
-
-  def generate_joke(state: State):
-      return {"joke": f"This is a joke about {state['topic']}"}
-
-  graph = (
-      StateGraph(State)
-      .add_node(refine_topic)
-      .add_node(generate_joke)
-      .add_edge(START, "refine_topic")
-      .add_edge("refine_topic", "generate_joke")
-      .add_edge("generate_joke", END)
-      .compile()
-  )
-
-  # The stream() method returns an iterator that yields streamed outputs
-  for chunk in graph.stream(  # [!code highlight]
-      {"topic": "ice cream"},
-      # Set stream_mode="updates" to stream only the updates to the graph state after each node
-      # Other stream modes are also available. See supported stream modes for details
-      stream_mode="updates",  # [!code highlight]
-      version="v2",  # [!code highlight]
-  ):
-      if chunk["type"] == "updates":
-          print(chunk["data"])
-```
-
-
-
-
-  ```python
-  {'refineTopic': {'topic': 'ice cream and cats'}}
-  {'generateJoke': {'joke': 'This is a joke about ice cream and cats'}}
-  ```
-</Accordion>
-
-## Stream multiple modes
-
-You can pass a list as the `stream_mode` parameter to stream multiple modes at once.
-
-With `version="v2"`, every chunk is a `StreamPart` dict. Use `chunk["type"]` to distinguish between modes:
-
-<CodeGroup>
-```python v2
-for chunk in graph.stream(inputs, stream_mode=["updates", "custom"], version="v2"):
-    if chunk["type"] == "updates":
-        print(chunk["data"])
-    elif chunk["type"] == "custom":
-        print(chunk["data"])
-```
-```python v1
-for mode, chunk in graph.stream(inputs, stream_mode=["updates", "custom"]):
-    print(chunk)
-```
-</CodeGroup>
-
-
-
-
-## Stream graph state
+### Graph state
 
 Use the stream modes `updates` and `values` to stream the state of the graph as it executes.
 
@@ -175,7 +202,13 @@ graph = (
         version="v2",  # [!code highlight]
     ):
         if chunk["type"] == "updates":
-            print(chunk["data"])
+            for node_name, state in chunk["data"].items():
+                print(f"Node `{node_name}` updated: {state}")
+    ```
+
+    ```shell title="Output"
+    Node `refine_topic` updated: {'topic': 'ice cream and cats'}
+    Node `generate_joke` updated: {'joke': 'This is a joke about ice cream and cats'}
     ```
 
 
@@ -191,7 +224,13 @@ graph = (
         version="v2",  # [!code highlight]
     ):
         if chunk["type"] == "values":
-            print(chunk["data"])
+            print(f"topic: {chunk['data']['topic']}, joke: {chunk['data']['joke']}")
+    ```
+
+    ```shell title="Output"
+    topic: ice cream, joke:
+    topic: ice cream and cats, joke:
+    topic: ice cream and cats, joke: This is a joke about ice cream and cats
     ```
 
 
@@ -199,135 +238,11 @@ graph = (
     </Tab>
 </Tabs>
 
-## Stream subgraph outputs
-
-To include outputs from [subgraphs](/oss/python/langgraph/use-subgraphs) in the streamed outputs, you can set `subgraphs=True` in the `.stream()` method of the parent graph. This will stream outputs from both the parent graph and any subgraphs.
-
-The outputs will be streamed as tuples `(namespace, data)`, where `namespace` is a tuple with the path to the node where a subgraph is invoked, e.g. `("parent_node:<task_id>", "child_node:<task_id>")`.
-
-<Tabs>
-    <Tab title="v2 (LangGraph >= 1.1)">
-    With `version="v2"`, subgraph events use the same `StreamPart` format. The `ns` field identifies the source:
-
-    ```python
-    for chunk in graph.stream(
-        {"foo": "foo"},
-        subgraphs=True,  # [!code highlight]
-        stream_mode="updates",
-        version="v2", # [!code highlight]
-    ):
-        print(chunk["type"])  # "updates"
-        print(chunk["ns"])    # () for root, ("node_name:<task_id>",) for subgraph
-        print(chunk["data"])  # {"node_name": {"key": "value"}}
-    ```
-    </Tab>
-    <Tab title="v1 (default)">
-    ```python
-    for chunk in graph.stream(
-        {"foo": "foo"},
-        # Set subgraphs=True to stream outputs from subgraphs
-        subgraphs=True,  # [!code highlight]
-        stream_mode="updates",
-    ):
-        print(chunk)
-    ```
-    </Tab>
-</Tabs>
-
-
-
-
-<Accordion title="Extended example: streaming from subgraphs">
-  ```python
-  from langgraph.graph import START, StateGraph
-  from typing import TypedDict
-
-  # Define subgraph
-  class SubgraphState(TypedDict):
-      foo: str  # note that this key is shared with the parent graph state
-      bar: str
-
-  def subgraph_node_1(state: SubgraphState):
-      return {"bar": "bar"}
-
-  def subgraph_node_2(state: SubgraphState):
-      return {"foo": state["foo"] + state["bar"]}
-
-  subgraph_builder = StateGraph(SubgraphState)
-  subgraph_builder.add_node(subgraph_node_1)
-  subgraph_builder.add_node(subgraph_node_2)
-  subgraph_builder.add_edge(START, "subgraph_node_1")
-  subgraph_builder.add_edge("subgraph_node_1", "subgraph_node_2")
-  subgraph = subgraph_builder.compile()
-
-  # Define parent graph
-  class ParentState(TypedDict):
-      foo: str
-
-  def node_1(state: ParentState):
-      return {"foo": "hi! " + state["foo"]}
-
-  builder = StateGraph(ParentState)
-  builder.add_node("node_1", node_1)
-  builder.add_node("node_2", subgraph)
-  builder.add_edge(START, "node_1")
-  builder.add_edge("node_1", "node_2")
-  graph = builder.compile()
-
-  for chunk in graph.stream(
-      {"foo": "foo"},
-      stream_mode="updates",
-      # Set subgraphs=True to stream outputs from subgraphs
-      subgraphs=True,  # [!code highlight]
-      version="v2",  # [!code highlight]
-  ):
-      if chunk["type"] == "updates":
-          if chunk["ns"]:
-              print(f"Subgraph {chunk['ns']}: {chunk['data']}")
-          else:
-              print(f"Root: {chunk['data']}")
-  ```
-
-
-
-
-  ```
-  Root: {'node_1': {'foo': 'hi! foo'}}
-  Subgraph ('node_2:dfddc4ba-c3c5-6887-5012-a243b5b377c2',): {'subgraph_node_1': {'bar': 'bar'}}
-  Subgraph ('node_2:dfddc4ba-c3c5-6887-5012-a243b5b377c2',): {'subgraph_node_2': {'foo': 'hi! foobar'}}
-  Root: {'node_2': {'foo': 'hi! foobar'}}
-  ```
-
-
-
-
-  **Note** that we are receiving not just the node updates, but we also the namespaces which tell us what graph (or subgraph) we are streaming from.
-</Accordion>
-
-<a id="debug"></a>
-### Debugging
-
-Use the `debug` streaming mode to stream as much information as possible throughout the execution of the graph. The streamed outputs include the name of the node as well as the full state.
-
-```python
-for chunk in graph.stream(
-    {"topic": "ice cream"},
-    stream_mode="debug",  # [!code highlight]
-    version="v2",  # [!code highlight]
-):
-    if chunk["type"] == "debug":
-        print(chunk["data"])
-```
-
-
-
-
-<a id="messages"></a>
-## LLM tokens
+### LLM tokens
 
 Use the `messages` streaming mode to stream Large Language Model (LLM) outputs **token by token** from any part of your graph, including nodes, tools, subgraphs, or tasks.
 
-The streamed output from [`messages` mode](#supported-stream-modes) is a tuple `(message_chunk, metadata)` where:
+The streamed output from [`messages` mode](#stream-modes) is a tuple `(message_chunk, metadata)` where:
 
 * `message_chunk`: the token or message segment from the LLM.
 * `metadata`: a dictionary containing details about the graph node and LLM invocation.
@@ -564,7 +479,7 @@ for chunk in graph.stream(
 
 </Accordion>
 
-## Stream custom data
+### Custom data
 
 To send **custom user-defined data** from inside a LangGraph node or tool, follow these steps:
 
@@ -608,7 +523,7 @@ See [Async with Python < 3.11](#async) for usage examples.
     # Set stream_mode="custom" to receive the custom data in the stream
     for chunk in graph.stream(inputs, stream_mode="custom", version="v2"):
         if chunk["type"] == "custom":
-            print(chunk["data"])
+            print(f"Custom event: {chunk['data']['custom_key']}")
     ```
     </Tab>
     <Tab title="tool">
@@ -634,7 +549,7 @@ See [Async with Python < 3.11](#async) for usage examples.
     # Set stream_mode="custom" to receive the custom data in the stream
     for chunk in graph.stream(inputs, stream_mode="custom", version="v2"):
         if chunk["type"] == "custom":
-            print(chunk["data"])
+            print(f"{chunk['data']['type']}: {chunk['data']['data']}")
 ```
     </Tab>
 </Tabs>
@@ -644,7 +559,220 @@ See [Async with Python < 3.11](#async) for usage examples.
 
 
 
-## Use with any LLM
+### Subgraph outputs
+
+To include outputs from [subgraphs](/oss/python/langgraph/use-subgraphs) in the streamed outputs, you can set `subgraphs=True` in the `.stream()` method of the parent graph. This will stream outputs from both the parent graph and any subgraphs.
+
+The outputs will be streamed as tuples `(namespace, data)`, where `namespace` is a tuple with the path to the node where a subgraph is invoked, e.g. `("parent_node:<task_id>", "child_node:<task_id>")`.
+
+<Tabs>
+    <Tab title="v2 (LangGraph >= 1.1)">
+    With `version="v2"`, subgraph events use the same `StreamPart` format. The `ns` field identifies the source:
+
+    ```python
+    for chunk in graph.stream(
+        {"foo": "foo"},
+        subgraphs=True,  # [!code highlight]
+        stream_mode="updates",
+        version="v2", # [!code highlight]
+    ):
+        print(chunk["type"])  # "updates"
+        print(chunk["ns"])    # () for root, ("node_name:<task_id>",) for subgraph
+        print(chunk["data"])  # {"node_name": {"key": "value"}}
+    ```
+    </Tab>
+    <Tab title="v1 (default)">
+    ```python
+    for chunk in graph.stream(
+        {"foo": "foo"},
+        # Set subgraphs=True to stream outputs from subgraphs
+        subgraphs=True,  # [!code highlight]
+        stream_mode="updates",
+    ):
+        print(chunk)
+    ```
+    </Tab>
+</Tabs>
+
+
+
+
+<Accordion title="Extended example: streaming from subgraphs">
+  ```python
+  from langgraph.graph import START, StateGraph
+  from typing import TypedDict
+
+  # Define subgraph
+  class SubgraphState(TypedDict):
+      foo: str  # note that this key is shared with the parent graph state
+      bar: str
+
+  def subgraph_node_1(state: SubgraphState):
+      return {"bar": "bar"}
+
+  def subgraph_node_2(state: SubgraphState):
+      return {"foo": state["foo"] + state["bar"]}
+
+  subgraph_builder = StateGraph(SubgraphState)
+  subgraph_builder.add_node(subgraph_node_1)
+  subgraph_builder.add_node(subgraph_node_2)
+  subgraph_builder.add_edge(START, "subgraph_node_1")
+  subgraph_builder.add_edge("subgraph_node_1", "subgraph_node_2")
+  subgraph = subgraph_builder.compile()
+
+  # Define parent graph
+  class ParentState(TypedDict):
+      foo: str
+
+  def node_1(state: ParentState):
+      return {"foo": "hi! " + state["foo"]}
+
+  builder = StateGraph(ParentState)
+  builder.add_node("node_1", node_1)
+  builder.add_node("node_2", subgraph)
+  builder.add_edge(START, "node_1")
+  builder.add_edge("node_1", "node_2")
+  graph = builder.compile()
+
+  for chunk in graph.stream(
+      {"foo": "foo"},
+      stream_mode="updates",
+      # Set subgraphs=True to stream outputs from subgraphs
+      subgraphs=True,  # [!code highlight]
+      version="v2",  # [!code highlight]
+  ):
+      if chunk["type"] == "updates":
+          if chunk["ns"]:
+              print(f"Subgraph {chunk['ns']}: {chunk['data']}")
+          else:
+              print(f"Root: {chunk['data']}")
+  ```
+
+
+
+
+  ```
+  Root: {'node_1': {'foo': 'hi! foo'}}
+  Subgraph ('node_2:dfddc4ba-c3c5-6887-5012-a243b5b377c2',): {'subgraph_node_1': {'bar': 'bar'}}
+  Subgraph ('node_2:dfddc4ba-c3c5-6887-5012-a243b5b377c2',): {'subgraph_node_2': {'foo': 'hi! foobar'}}
+  Root: {'node_2': {'foo': 'hi! foobar'}}
+  ```
+
+
+
+
+  **Note** that we are receiving not just the node updates, but we also the namespaces which tell us what graph (or subgraph) we are streaming from.
+</Accordion>
+
+### Checkpoints
+
+Use the `checkpoints` streaming mode to receive checkpoint events as the graph executes. Each checkpoint event has the same format as the output of `get_state()`. Requires a [checkpointer](/oss/python/langgraph/persistence).
+
+```python
+from langgraph.checkpoint.memory import MemorySaver
+
+graph = (
+    StateGraph(State)
+    .add_node(refine_topic)
+    .add_node(generate_joke)
+    .add_edge(START, "refine_topic")
+    .add_edge("refine_topic", "generate_joke")
+    .add_edge("generate_joke", END)
+    .compile(checkpointer=MemorySaver())
+)
+
+config = {"configurable": {"thread_id": "1"}}
+
+for chunk in graph.stream(
+    {"topic": "ice cream"},
+    config=config,
+    stream_mode="checkpoints",  # [!code highlight]
+    version="v2",  # [!code highlight]
+):
+    if chunk["type"] == "checkpoints":
+        print(chunk["data"])
+```
+
+### Tasks
+
+Use the `tasks` streaming mode to receive task start and finish events as the graph executes. Task events include information about which node is running, its results, and any errors. Requires a [checkpointer](/oss/python/langgraph/persistence).
+
+```python
+from langgraph.checkpoint.memory import MemorySaver
+
+graph = (
+    StateGraph(State)
+    .add_node(refine_topic)
+    .add_node(generate_joke)
+    .add_edge(START, "refine_topic")
+    .add_edge("refine_topic", "generate_joke")
+    .add_edge("generate_joke", END)
+    .compile(checkpointer=MemorySaver())
+)
+
+config = {"configurable": {"thread_id": "1"}}
+
+for chunk in graph.stream(
+    {"topic": "ice cream"},
+    config=config,
+    stream_mode="tasks",  # [!code highlight]
+    version="v2",  # [!code highlight]
+):
+    if chunk["type"] == "tasks":
+        print(chunk["data"])
+```
+
+
+<a id="debug"></a>
+### Debug
+
+Use the `debug` streaming mode to stream as much information as possible throughout the execution of the graph. The streamed outputs include the name of the node as well as the full state.
+
+```python
+for chunk in graph.stream(
+    {"topic": "ice cream"},
+    stream_mode="debug",  # [!code highlight]
+    version="v2",  # [!code highlight]
+):
+    if chunk["type"] == "debug":
+        print(chunk["data"])
+```
+
+
+
+
+<Note>
+The `debug` mode combines `checkpoints` and `tasks` events with additional metadata. Use `checkpoints` or `tasks` directly if you only need a subset of the debug information.
+</Note>
+
+
+### Multiple modes at once
+
+You can pass a list as the `stream_mode` parameter to stream multiple modes at once.
+
+With `version="v2"`, every chunk is a `StreamPart` dict. Use `chunk["type"]` to distinguish between modes:
+
+<CodeGroup>
+```python v2
+for chunk in graph.stream(inputs, stream_mode=["updates", "custom"], version="v2"):
+    if chunk["type"] == "updates":
+        for node_name, state in chunk["data"].items():
+            print(f"Node `{node_name}` updated: {state}")
+    elif chunk["type"] == "custom":
+        print(f"Custom event: {chunk['data']}")
+```
+```python v1
+for mode, chunk in graph.stream(inputs, stream_mode=["updates", "custom"]):
+    print(chunk)
+```
+</CodeGroup>
+
+
+
+
+## Advanced
+
+### Use with any LLM
 
 You can use `stream_mode="custom"` to stream data from **any LLM API**—even if that API does **not** implement the LangChain chat model interface.
 
@@ -808,7 +936,7 @@ for chunk in graph.stream(
 
 </Accordion>
 
-## Disable streaming for specific chat models
+### Disable streaming for specific chat models
 
 If your application mixes models that support streaming with those that do not, you may need to explicitly disable streaming for
 models that do not support it.
@@ -847,93 +975,22 @@ Not all chat model integrations support the `streaming` parameter. If your model
 
 
 
-## v2 streaming format
+### Migrate to v2
 
-<Note>
-Requires LangGraph >= 1.1. All examples in this page use `version="v2"`.
-</Note>
+The v2 streaming format (used throughout this page) provides a unified output format. Here's a summary of the key differences and how to migrate:
 
-Pass `version="v2"` to `stream()` or `astream()` to get a unified output format. Every chunk is a `StreamPart` dict with a consistent shape — regardless of stream mode, number of modes, or subgraph settings:
+| Scenario | v1 (default) | v2 (`version="v2"`) |
+|---|---|---|
+| Single stream mode | Raw data (dict) | `StreamPart` dict with `type`, `ns`, `data` |
+| Multiple stream modes | `(mode, data)` tuples | Same `StreamPart` dict, filter on `chunk["type"]` |
+| Subgraph streaming | `(namespace, data)` tuples | Same `StreamPart` dict, check `chunk["ns"]` |
+| Multiple modes + subgraphs | `(namespace, mode, data)` triples | Same `StreamPart` dict |
+| `invoke()` return type | Plain dict (state) | `GraphOutput` with `.value` and `.interrupts` |
+| Interrupt location (stream) | `__interrupt__` key in state dict | `interrupts` field on `values` stream parts |
+| Interrupt location (invoke) | `__interrupt__` key in result dict | `.interrupts` attribute on `GraphOutput` |
+| Pydantic/dataclass output | Returns plain dict | Coerces to model/dataclass instance |
 
-```python
-{
-    "type": "values" | "updates" | "messages" | "custom" | "checkpoints" | "tasks" | "debug",
-    "ns": (),           # namespace tuple, populated for subgraph events
-    "data": ...,        # the actual payload (type varies by stream mode)
-}
-```
-
-Each stream mode has a corresponding `TypedDict` containing [`ValuesStreamPart`](https://reference.langchain.com/python/langgraph/types/ValuesStreamPart), [`UpdatesStreamPart`](https://reference.langchain.com/python/langgraph/types/UpdatesStreamPart), [`MessagesStreamPart`](https://reference.langchain.com/python/langgraph/types/MessagesStreamPart), [`CustomStreamPart`](https://reference.langchain.com/python/langgraph/types/CustomStreamPart), [`CheckpointStreamPart`](https://reference.langchain.com/python/langgraph/types/CheckpointStreamPart), [`TasksStreamPart`](https://reference.langchain.com/python/langgraph/types/TasksStreamPart), [`DebugStreamPart`](https://reference.langchain.com/python/langgraph/types/DebugStreamPart). You can import these types from `langgraph.types`. The union type [`StreamPart`](https://reference.langchain.com/python/langgraph/types/StreamPart) is a disjoing union on `part["type"]`, enabling full type narrowing in editors and type checkers.
-
-With v1 (default), the output format changes based on your streaming options (single mode returns raw data, multiple modes return `(mode, data)` tuples, subgraphs return `(namespace, data)` tuples). With v2, the format is always the same:
-
-<CodeGroup>
-```python v2 (new)
-for chunk in graph.stream(inputs, stream_mode="updates", version="v2"):
-    print(chunk["type"])  # "updates"
-    print(chunk["ns"])    # ()
-    print(chunk["data"])  # {"node_name": {"key": "value"}}
-```
-```python v1 (current default)
-for chunk in graph.stream(inputs, stream_mode="updates"):
-    print(chunk)  # {"node_name": {"key": "value"}}
-```
-</CodeGroup>
-
-The v2 format also enables type narrowing, which means you can filter chunks by `chunk["type"]` and get the correct payload type:
-
-```python
-for part in graph.stream(inputs, version="v2"):
-    if part["type"] == "values":
-        part["data"]        # full state (dict, Pydantic model, or dataclass)
-        part["interrupts"]  # tuple[Interrupt, ...]
-    elif part["type"] == "updates":
-        part["data"]        # dict[str, Any]
-    elif part["type"] == "messages":
-        part["data"]        # tuple[BaseMessage, dict]
-    elif part["type"] == "custom":
-        part["data"]        # Any
-    elif part["type"] == "tasks":
-        part["data"]        # TaskPayload | TaskResultPayload
-    elif part["type"] == "debug":
-        part["data"]        # DebugPayload
-```
-
-### Subgraph streaming with v2
-
-With v2, all subgraph events use the same `StreamPart` format. The `ns` field identifies the source graph:
-
-```python
-for chunk in graph.stream(
-    inputs, stream_mode="updates", subgraphs=True, version="v2"
-):
-    if chunk["ns"] == ():
-        print("Root graph:", chunk["data"])
-    else:
-        print(f"Subgraph {chunk['ns']}:", chunk["data"])
-```
-
-### Pydantic and dataclass state coercion
-
-When your graph state is a Pydantic model or dataclass, v2 `values` mode automatically coerces output to the correct type:
-
-```python
-from pydantic import BaseModel
-from typing import Annotated
-import operator
-
-class MyState(BaseModel):
-    value: str
-    items: Annotated[list[str], operator.add]
-
-# With version="v2", chunk["data"] is a MyState instance
-for chunk in graph.stream(
-    {"value": "x", "items": []}, stream_mode="values", version="v2"
-):
-    print(type(chunk["data"]))  # <class 'MyState'>
-```
-
-### v2 invoke format
+#### v2 invoke format
 
 When you pass `version="v2"` to `invoke()` or `ainvoke()`, it returns a [`GraphOutput`](https://reference.langchain.com/python/langgraph/types/GraphOutput) object with `.value` and `.interrupts` attributes:
 
@@ -974,23 +1031,28 @@ if "__interrupt__" in result:
 ```
 </CodeGroup>
 
-### Migrate to v2
+#### Pydantic and dataclass state coercion
 
-The following table summarizes the format changes when migrating from v1 to v2:
+When your graph state is a Pydantic model or dataclass, v2 `values` mode automatically coerces output to the correct type:
 
-| Scenario | v1 (default) | v2 (`version="v2"`) |
-|---|---|---|
-| Single stream mode | Raw data (dict) | `StreamPart` dict with `type`, `ns`, `data` |
-| Multiple stream modes | `(mode, data)` tuples | Same `StreamPart` dict, filter on `chunk["type"]` |
-| Subgraph streaming | `(namespace, data)` tuples | Same `StreamPart` dict, check `chunk["ns"]` |
-| Multiple modes + subgraphs | `(namespace, mode, data)` triples | Same `StreamPart` dict |
-| `invoke()` return type | Plain dict (state) | `GraphOutput` with `.value` and `.interrupts` |
-| Interrupt location (stream) | `__interrupt__` key in state dict | `interrupts` field on `values` stream parts |
-| Interrupt location (invoke) | `__interrupt__` key in result dict | `.interrupts` attribute on `GraphOutput` |
-| Pydantic/dataclass output | Returns plain dict | Coerces to model/dataclass instance |
+```python
+from pydantic import BaseModel
+from typing import Annotated
+import operator
+
+class MyState(BaseModel):
+    value: str
+    items: Annotated[list[str], operator.add]
+
+# With version="v2", chunk["data"] is a MyState instance
+for chunk in graph.stream(
+    {"value": "x", "items": []}, stream_mode="values", version="v2"
+):
+    print(type(chunk["data"]))  # <class 'MyState'>
+```
 
 <a id="async"></a>
-## Async with Python < 3.11
+### Async with Python < 3.11
 
 In Python versions < 3.11, [asyncio tasks](https://docs.python.org/3/library/asyncio-task.html#asyncio.create_task) do not support the `context` parameter.
 This limits LangGraph ability to automatically propagate context, and affects LangGraph's streaming mechanisms in two key ways:

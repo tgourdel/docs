@@ -219,10 +219,9 @@ const approvalNode: typeof State.Node = (state) => {
 ```
 
 
+
+
 When you resume the graph, pass `true` to approve or `false` to reject:
-
-
-
 ```typescript
 // To approve
 await graph.invoke(new Command({ resume: true }), config);
