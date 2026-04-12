@@ -27,8 +27,8 @@ We recommend you use LangChain if you want to quickly build agents and autonomou
 
 
 ```ts
-import * as z from "zod";
-// npm install @langchain/anthropic to call the model
+// First install: npm install langchain @langchain/anthropic
+import { z } from "zod";
 import { createAgent, tool } from "langchain";
 
 const getWeather = tool(
@@ -43,7 +43,7 @@ const getWeather = tool(
 );
 
 const agent = createAgent({
-  model: "claude-sonnet-4-6",
+  model: "anthropic:claude-sonnet-4-6",
   tools: [getWeather],
 });
 

@@ -1306,9 +1306,9 @@ const agent = createAgent({
   store,
   middleware: [
     createFilesystemMiddleware({
-      backend: (config) => new CompositeBackend(
-        new StateBackend(config),
-        { "/memories/": new StoreBackend(config) }
+      backend: new CompositeBackend(
+        new StateBackend(),
+        { "/memories/": new StoreBackend() }
       ),
       systemPrompt: "Write to the filesystem when...", // Optional custom system prompt override
       customToolDescriptions: {
